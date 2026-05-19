@@ -1,12 +1,5 @@
 import { useState } from 'react'
-import { login, register } from '../services/authApi'
-
-const IconUser = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-)
+import { login } from '../services/authApi'
 
 const IconMail = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -77,16 +70,12 @@ function AuthField({ error, icon, label, onChange, placeholder, rightControl, ty
 }
 
 export default function LoginPage({ onLogin }) {
-  const [page, setPage] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [shake, setShake] = useState(false)
-
-  const isLogin = page === 'login'
 
   function validateLogin() {
     const nextErrors = {}
@@ -96,8 +85,6 @@ export default function LoginPage({ onLogin }) {
 
     if (!password) nextErrors.password = 'Mật khẩu không được để trống.'
     else if (password.length < 6) nextErrors.password = 'Mật khẩu tối thiểu 6 ký tự.'
-
-    if (!isLogin && !name.trim()) nextErrors.name = 'Họ tên không được để trống.'
 
     return nextErrors
   }
@@ -111,18 +98,10 @@ export default function LoginPage({ onLogin }) {
     const setters = {
       email: setEmail,
       password: setPassword,
-      name: setName,
     }
 
     setters[field](value)
     setErrors((current) => ({ ...current, [field]: '', general: '' }))
-  }
-
-  function switchMode() {
-    setPage(isLogin ? 'signup' : 'login')
-    setErrors({})
-    setPassword('')
-    setName('')
   }
 
   async function handleAuthSubmit(event) {
@@ -142,19 +121,6 @@ export default function LoginPage({ onLogin }) {
     })
 
     try {
-      if (!isLogin) {
-        await register({
-          fullName: name.trim(),
-          email: email.trim(),
-          password,
-        })
-        setPage('login')
-        setPassword('')
-        setName('')
-        setErrors({ general: 'Tài khoản đã tạo. Hãy đăng nhập để tiếp tục.' })
-        return
-      }
-
       const user = await login({
         email: email.trim(),
         password,
@@ -186,22 +152,15 @@ export default function LoginPage({ onLogin }) {
           </div>
 
           <div className="login-copy">
-            <h1>{isLogin ? 'Welcome Back!' : 'Join Diprella!'}</h1>
-            <p>
-              {isLogin
-                ? 'Đăng nhập để tiếp tục quản lý khách hàng, ghi chú và lịch sử tương tác.'
-                : 'Tạo tài khoản để bắt đầu theo dõi khách hàng trong dashboard CRM.'}
-            </p>
-            <button type="button" onClick={switchMode}>
-              {isLogin ? 'Đăng ký' : 'Đăng nhập'}
-            </button>
+            <h1>Welcome Back!</h1>
+            <p>Đăng nhập để tiếp tục quản lý khách hàng, tìm kiếm nhanh, ghi chú và lịch sử tương tác.</p>
           </div>
         </aside>
 
         <form className="auth-form" onSubmit={handleAuthSubmit}>
           <div>
             <p className="eyebrow">Customer Relationship Management</p>
-            <h2>{isLogin ? 'Đăng Nhập' : 'Tạo Tài Khoản'}</h2>
+            <h2>Đăng Nhập</h2>
           </div>
 
           <div className="social-row" aria-label="Social login options">
@@ -223,16 +182,6 @@ export default function LoginPage({ onLogin }) {
           )}
 
           <div className="auth-fields">
-            {!isLogin && (
-              <AuthField
-                error={errors.name}
-                icon={<IconUser />}
-                label="Họ và tên"
-                onChange={(value) => updateAuthField('name', value)}
-                placeholder="Họ và tên"
-                value={name}
-              />
-            )}
             <AuthField
               error={errors.email}
               icon={<IconMail />}
@@ -263,22 +212,18 @@ export default function LoginPage({ onLogin }) {
             />
           </div>
 
-          {isLogin && (
-            <button className="forgot-link" type="button">
-              Quên mật khẩu?
-            </button>
-          )}
+          <button className="forgot-link" type="button">
+            Quên mật khẩu?
+          </button>
 
           <button className="auth-submit" disabled={loading} type="submit">
             {loading && <span className="spinner" />}
-            {loading ? 'Đang xử lý...' : isLogin ? 'Đăng Nhập' : 'Đăng Ký'}
+            {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
           </button>
 
-          {isLogin && (
-            <p className="demo-hint">
-              Dùng tài khoản đã có trong bảng <code>users</code>
-            </p>
-          )}
+          <p className="demo-hint">
+            Dùng tài khoản đã có trong bảng <code>users</code>
+          </p>
         </form>
       </section>
     </main>

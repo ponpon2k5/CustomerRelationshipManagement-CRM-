@@ -9,6 +9,7 @@ import java.net.URI;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,13 +28,6 @@ public class CustomerController {
 
     private final CustomerService customerService;
 
-    @GetMapping("/search")
-    public List<CustomerResponse> searchCustomers(
-            @RequestParam String keyword
-    ) {
-        return customerService.searchCustomers(keyword);
-    }
-}
     @PostMapping
     public ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CustomerCreateRequest request) {
         CustomerResponse response = customerService.createCustomer(request);
@@ -42,6 +37,11 @@ public class CustomerController {
     @GetMapping
     public List<CustomerResponse> getCustomers() {
         return customerService.getCustomers();
+    }
+
+    @GetMapping("/search")
+    public List<CustomerResponse> searchCustomers(@RequestParam String keyword) {
+        return customerService.searchCustomers(keyword);
     }
 
     @GetMapping("/{id}")

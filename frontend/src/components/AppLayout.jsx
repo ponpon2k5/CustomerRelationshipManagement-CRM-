@@ -57,7 +57,7 @@ export default function AppLayout({
             <span aria-hidden="true">⌕</span>
             <input
               type="search"
-              placeholder="Search customers, email, notes..."
+              placeholder="Search name, phone, or email..."
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
             />
