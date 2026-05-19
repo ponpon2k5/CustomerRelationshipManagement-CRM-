@@ -10,6 +10,7 @@ export default function CustomerProfilePage({
   editErrors,
   editForm,
   isEditing,
+  onActivate,
   onBackToList,
   onCancelEdit,
   onDeactivate,
@@ -27,6 +28,8 @@ export default function CustomerProfilePage({
   }, [])
 
   const isInactive = selectedCustomer?.status === 'Inactive'
+  const userRole = String(user?.role || '').toUpperCase()
+  const canDeactivate = userRole === 'MANAGER'
 
   if (!selectedCustomer) {
     return (
@@ -53,9 +56,14 @@ export default function CustomerProfilePage({
                 Edit
               </button>
             )}
-            {['Admin', 'MANAGER'].includes(user?.role) && selectedCustomer.status === 'Active' && !isEditing && (
+            {canDeactivate && selectedCustomer.status === 'Active' && !isEditing && (
               <button className="danger-button" type="button" onClick={() => onDeactivate(selectedCustomer.id)}>
                 Deactivate
+              </button>
+            )}
+            {selectedCustomer.status === 'Inactive' && !isEditing && (
+              <button className="primary-button" type="button" onClick={() => onActivate(selectedCustomer.id)}>
+                Activate
               </button>
             )}
           </div>
@@ -144,14 +152,6 @@ export default function CustomerProfilePage({
               <h3>Notes</h3>
               <p>Notes are saved after each interaction and sorted newest first.</p>
             </div>
-            <button
-              className="secondary-button"
-              disabled={isInactive}
-              type="button"
-              onClick={() => document.getElementById('interaction-history-panel')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              Edit Notes
-            </button>
           </div>
           <Timeline
             title=""

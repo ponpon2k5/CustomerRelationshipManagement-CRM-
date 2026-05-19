@@ -61,3 +61,9 @@ export function deactivateCustomer(customerId) {
     method: 'PATCH',
   })
 }
+
+export function activateCustomer(customerId) {
+  return request(`/api/customers/${customerId}/activate`, {
+    method: 'PATCH',
+  })
+}

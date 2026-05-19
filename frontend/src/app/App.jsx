@@ -286,6 +286,37 @@ function App() {
     }
   }
 
+  async function activateCustomer(customerId) {
+    const confirmed = window.confirm('Activate this customer again?')
+    if (!confirmed) return
+
+    const customer = customers.find((item) => item.id === customerId)
+    if (!customer) {
+      setCustomerLoadError('Customer not found.')
+      return
+    }
+
+    setIsEditing(false)
+
+    try {
+      const savedCustomer = await updateCustomer(customerId, {
+        fullName: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        company: customer.companyName,
+        address: customer.address,
+        isActive: true,
+      })
+      const nextCustomer = mapCustomerFromApi(savedCustomer)
+      setCustomers((current) =>
+        current.map((customer) => (customer.id === customerId ? nextCustomer : customer)),
+      )
+      setSelectedId(customerId)
+    } catch (err) {
+      setCustomerLoadError(err.message || 'Failed to activate customer.')
+    }
+  }
+
   function navigateTo(item) {
     if (item === 'Customers' || item === 'Profile' || item === 'Search') {
       setActivePage(item)
@@ -347,6 +378,7 @@ function App() {
           errors={errors}
           form={form}
           inactiveCount={inactiveCount}
+          onActivate={activateCustomer}
           onChangeSort={changeSort}
           onCloseCreate={closeCreateModal}
           onOpenCreate={openCreateModal}
@@ -383,6 +415,7 @@ function App() {
             cancelEditCustomer()
           }}
           onCancelEdit={cancelEditCustomer}
+          onActivate={activateCustomer}
           onDeactivate={deactivateCustomer}
           onSave={handleUpdateCustomer}
           onStartEdit={startEditCustomer}

@@ -61,4 +61,9 @@ public class CustomerController {
     public CustomerResponse deactivateCustomer(@PathVariable Long id) {
         return customerService.deactivateCustomer(id);
     }
+
+    @PatchMapping("/{id}/activate")
+    public CustomerResponse activateCustomer(@PathVariable Long id) {
+        return customerService.activateCustomer(id);
+    }
 }

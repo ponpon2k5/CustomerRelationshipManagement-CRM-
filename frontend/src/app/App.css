@@ -977,6 +977,20 @@ td strong {
   background: #dff1e8;
 }
 
+.table-action + .table-action {
+  margin-left: 8px;
+}
+
+.activate-action {
+  border-color: #b2ebe7;
+  background: #e8faf9;
+  color: #16867c;
+}
+
+.activate-action:hover {
+  background: #d7f5f2;
+}
+
 .detail-panel {
   margin: 0 28px;
 }

@@ -95,6 +95,16 @@ public class CustomerService {
         return toResponse(savedCustomer);
     }
 
+    @Transactional
+    public CustomerResponse activateCustomer(Long id) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id));
+
+        customer.setIsActive(true);
+        Customer savedCustomer = customerRepository.save(customer);
+        return toResponse(savedCustomer);
+    }
+
     private CustomerResponse toResponse(Customer customer) {
         return new CustomerResponse(
                 customer.getId(),

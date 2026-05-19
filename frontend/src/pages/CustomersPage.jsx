@@ -9,6 +9,7 @@ export default function CustomersPage({
   errors,
   form,
   inactiveCount,
+  onActivate,
   onChangeSort,
   onCloseCreate,
   onOpenCreate,
@@ -116,6 +117,18 @@ export default function CustomersPage({
                           >
                             Detail Profile
                           </button>
+                          {customer.status === 'Inactive' && (
+                            <button
+                              className="table-action activate-action"
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                onActivate(customer.id)
+                              }}
+                            >
+                              Activate
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

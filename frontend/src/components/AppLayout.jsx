@@ -13,6 +13,7 @@ export default function AppLayout({
   const displayName = typeof sessionUser === 'string'
     ? sessionUser
     : sessionUser?.fullName || sessionUser?.email || 'user'
+  const role = typeof sessionUser === 'string' ? '' : sessionUser?.role
 
   return (
     <main className="crm-shell">
@@ -64,6 +65,7 @@ export default function AppLayout({
             <button type="submit">Search</button>
           </form>
           <div className="user-chip">
+            {role && <span>{role}</span>}
             <strong>Welcome, {displayName}</strong>
             <button type="button" onClick={onLogout}>Đăng xuất</button>
           </div>
