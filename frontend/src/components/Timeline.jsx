@@ -5,7 +5,7 @@ export default function Timeline({ title, items, emptyText }) {
 
   return (
     <div className="timeline">
-      <h3>{title}</h3>
+      {title && <h3>{title}</h3>}
       {sortedItems.length === 0 ? (
         <div className="empty-inline">{emptyText}</div>
       ) : (

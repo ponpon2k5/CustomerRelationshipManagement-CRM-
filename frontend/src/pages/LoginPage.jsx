@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MOCK_USER } from '../data/customers'
+import { login, register } from '../services/authApi'
 
 const IconUser = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -141,23 +141,31 @@ export default function LoginPage({ onLogin }) {
       window.setTimeout(resolve, 700)
     })
 
-    if (!isLogin) {
-      setPage('login')
-      setPassword('')
-      setName('')
-      setErrors({ general: 'Tài khoản đã tạo. Hãy đăng nhập để tiếp tục.' })
-      setLoading(false)
-      return
-    }
+    try {
+      if (!isLogin) {
+        await register({
+          fullName: name.trim(),
+          email: email.trim(),
+          password,
+        })
+        setPage('login')
+        setPassword('')
+        setName('')
+        setErrors({ general: 'Tài khoản đã tạo. Hãy đăng nhập để tiếp tục.' })
+        return
+      }
 
-    if (email.trim().toLowerCase() === MOCK_USER.email && password === MOCK_USER.password) {
-      onLogin(email.split('@')[0])
-    } else {
-      setErrors({ general: 'Email hoặc mật khẩu không chính xác. Vui lòng thử lại.' })
+      const user = await login({
+        email: email.trim(),
+        password,
+      })
+      onLogin(user)
+    } catch (err) {
+      setErrors({ general: err.message || 'Email hoặc mật khẩu không chính xác. Vui lòng thử lại.' })
       triggerShake()
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (
@@ -268,7 +276,7 @@ export default function LoginPage({ onLogin }) {
 
           {isLogin && (
             <p className="demo-hint">
-              Demo: <code>admin@crm.com</code> / <code>123456</code>
+              Dùng tài khoản đã có trong bảng <code>users</code>
             </p>
           )}
         </form>

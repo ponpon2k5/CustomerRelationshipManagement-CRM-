@@ -852,6 +852,11 @@ th button {
   cursor: not-allowed;
 }
 
+.secondary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .secondary-button {
   padding: 8px 12px;
   background: #ffffff;
@@ -1350,10 +1355,38 @@ td strong {
   margin: 16px;
 }
 
-.interaction-panel h3 {
+.interaction-panel h3,
+.history-panel-heading h3 {
   margin: 0 0 12px;
   font-size: 16px;
   color: #202733;
+}
+
+.interaction-panel-heading,
+.history-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.interaction-panel-heading p,
+.history-panel-heading p {
+  margin: 0;
+  color: #6a7584;
+  font-size: 13px;
+}
+
+.interaction-disabled {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #f1c6c6;
+  border-radius: 8px;
+  background: #fff7f7;
+  color: #a93131;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .interaction-form {
@@ -1388,6 +1421,15 @@ td strong {
   font: inherit;
   color: #202733;
   background: #fff;
+}
+
+.interaction-form input:disabled,
+.interaction-form select:disabled,
+.interaction-form textarea:disabled,
+.interaction-edit textarea:disabled {
+  cursor: not-allowed;
+  background: #f3f6f8;
+  color: #7a8794;
 }
 
 .interaction-error {

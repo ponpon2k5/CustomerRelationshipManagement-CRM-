@@ -10,6 +10,10 @@ export default function AppLayout({
   sessionUser,
   setSearchInput,
 }) {
+  const displayName = typeof sessionUser === 'string'
+    ? sessionUser
+    : sessionUser?.fullName || sessionUser?.email || 'user'
+
   return (
     <main className="crm-shell">
       <aside className="sidebar" aria-label="Primary navigation">
@@ -60,7 +64,7 @@ export default function AppLayout({
             <button type="submit">Search</button>
           </form>
           <div className="user-chip">
-            <strong>Welcome, {sessionUser || 'user'}</strong>
+            <strong>Welcome, {displayName}</strong>
             <button type="button" onClick={onLogout}>Đăng xuất</button>
           </div>
         </header>

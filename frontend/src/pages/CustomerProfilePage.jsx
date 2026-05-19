@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react'
 import InteractionHistoryPanel from '../components/InteractionHistoryPanel'
 import Timeline from '../components/Timeline'
-import { currentUser } from '../data/customers'
 import { formatDateTime } from '../utils/customerUtils'
 import { toNoteItem } from '../utils/interactionUtils'
 
@@ -19,12 +18,15 @@ export default function CustomerProfilePage({
   onToggleDuplicate,
   onUpdateForm,
   selectedCustomer,
+  user,
 }) {
   const [apiNotes, setApiNotes] = useState([])
 
   const handleNotesChange = useCallback((interactions) => {
     setApiNotes(interactions.map(toNoteItem))
   }, [])
+
+  const isInactive = selectedCustomer?.status === 'Inactive'
 
   if (!selectedCustomer) {
     return (
@@ -51,7 +53,7 @@ export default function CustomerProfilePage({
                 Edit
               </button>
             )}
-            {currentUser.role === 'Admin' && selectedCustomer.status === 'Active' && !isEditing && (
+            {['Admin', 'MANAGER'].includes(user?.role) && selectedCustomer.status === 'Active' && !isEditing && (
               <button className="danger-button" type="button" onClick={() => onDeactivate(selectedCustomer.id)}>
                 Deactivate
               </button>
@@ -137,16 +139,32 @@ export default function CustomerProfilePage({
 
       <section className="profile-history-grid" aria-label="Customer notes and interaction history">
         <div className="panel history-panel">
+          <div className="history-panel-heading">
+            <div>
+              <h3>Notes</h3>
+              <p>Notes are saved after each interaction and sorted newest first.</p>
+            </div>
+            <button
+              className="secondary-button"
+              disabled={isInactive}
+              type="button"
+              onClick={() => document.getElementById('interaction-history-panel')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              Edit Notes
+            </button>
+          </div>
           <Timeline
-            title="Notes"
+            title=""
             items={apiNotes}
             emptyText="No notes for this customer."
           />
         </div>
         <div className="panel history-panel">
           <InteractionHistoryPanel
-            createdById={currentUser.id}
+            createdById={user?.id}
             customerId={selectedCustomer.id}
+            disabled={isInactive}
+            disabledReason="This customer is inactive. Interaction logging and note editing are disabled."
             onNotesChange={handleNotesChange}
           />
         </div>

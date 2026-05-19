@@ -2,7 +2,11 @@ import { useMemo } from 'react'
 import { formatDate } from '../utils/customerUtils'
 
 export default function SearchPage({ customers, query, searchInput, setSearchInput, onSearch, onOpenProfile }) {
-  const quickSearches = ['Skinder', 'Viva Health', 'inactive', 'email', 'onboarding', 'migration']
+  const quickSearches = [
+    ...customers.slice(0, 3).map((customer) => customer.name).filter(Boolean),
+    'inactive',
+    'email',
+  ]
   const normalizedQuery = query.trim().toLowerCase()
 
   const results = useMemo(() => {

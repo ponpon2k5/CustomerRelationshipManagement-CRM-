@@ -22,7 +22,7 @@ function emptyForm() {
   }
 }
 
-export default function InteractionHistoryPanel({ customerId, createdById, onNotesChange }) {
+export default function InteractionHistoryPanel({ customerId, createdById, disabled = false, disabledReason = '', onNotesChange }) {
   const [interactions, setInteractions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -56,6 +56,7 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
 
   async function handleCreate(event) {
     event.preventDefault()
+    if (disabled) return
     if (!form.noteContent.trim()) return
 
     setSaving(true)
@@ -78,6 +79,7 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
   }
 
   async function handleUpdate(id) {
+    if (disabled) return
     if (!editContent.trim()) return
 
     setSaving(true)
@@ -98,14 +100,26 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
   const timelineItems = interactions.map(toTimelineItem).sort((a, b) => b.date.localeCompare(a.date))
 
   return (
-    <div className="interaction-panel">
-      <h3>Interaction History</h3>
+    <div className="interaction-panel" id="interaction-history-panel">
+      <div className="interaction-panel-heading">
+        <div>
+          <h3>Interaction History</h3>
+          <p>Record interaction type, time, and a note after each customer contact.</p>
+        </div>
+      </div>
+
+      {disabled && (
+        <div className="interaction-disabled">
+          {disabledReason || 'Inactive customers cannot receive new interactions or note updates.'}
+        </div>
+      )}
 
       <form className="interaction-form" onSubmit={handleCreate}>
         <div className="interaction-form-grid">
           <label>
             Type
             <select
+              disabled={disabled || saving}
               value={form.interactionType}
               onChange={(event) => setForm((current) => ({ ...current, interactionType: event.target.value }))}
             >
@@ -119,6 +133,7 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
           <label>
             Date & time
             <input
+              disabled={disabled || saving}
               type="datetime-local"
               value={form.interactionTime}
               onChange={(event) => setForm((current) => ({ ...current, interactionTime: event.target.value }))}
@@ -128,14 +143,15 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
         <label>
           Note
           <textarea
+            disabled={disabled || saving}
             rows={3}
             placeholder="Log what happened during this interaction..."
             value={form.noteContent}
             onChange={(event) => setForm((current) => ({ ...current, noteContent: event.target.value }))}
           />
         </label>
-        <button className="primary-button" disabled={saving || !form.noteContent.trim()} type="submit">
-          {saving ? 'Saving...' : 'Add Interaction'}
+        <button className="primary-button" disabled={disabled || saving || !form.noteContent.trim()} type="submit">
+          {saving ? 'Saving...' : 'Log Interaction + Note'}
         </button>
       </form>
 
@@ -151,7 +167,7 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
             <article key={item.id}>
               <div className="interaction-item-head">
                 <span>{formatDateTime(item.date)}</span>
-                {editingId !== item.id && (
+                {editingId !== item.id && !disabled && (
                   <button
                     className="text-button"
                     type="button"
@@ -167,6 +183,7 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
               {editingId === item.id ? (
                 <div className="interaction-edit">
                   <textarea
+                    disabled={saving}
                     rows={3}
                     value={editContent}
                     onChange={(event) => setEditContent(event.target.value)}
@@ -174,11 +191,11 @@ export default function InteractionHistoryPanel({ customerId, createdById, onNot
                   <div className="form-actions">
                     <button
                       className="primary-button"
-                      disabled={saving || !editContent.trim()}
+                      disabled={disabled || saving || !editContent.trim()}
                       type="button"
                       onClick={() => handleUpdate(item.id)}
                     >
-                      Save
+                      Save Note
                     </button>
                     <button
                       className="secondary-button"

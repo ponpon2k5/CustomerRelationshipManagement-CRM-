@@ -1,18 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AppLayout from '../components/AppLayout'
 import CustomersPage from '../pages/CustomersPage'
 import CustomerProfilePage from '../pages/CustomerProfilePage'
 import LoginPage from '../pages/LoginPage'
 import SearchPage from '../pages/SearchPage'
-import { currentUser, emptyForm, initialCustomers } from '../data/customers'
+import {
+  createCustomer,
+  deactivateCustomer as deactivateCustomerRequest,
+  getCustomers,
+  updateCustomer,
+} from '../services/customerApi'
+import { emptyForm } from '../data/customers'
 import { formatDate, normalizePhone } from '../utils/customerUtils'
 import './App.css'
 
 function App() {
-  const [sessionUser, setSessionUser] = useState('')
-  const [customers, setCustomers] = useState(initialCustomers)
+  const [sessionUser, setSessionUser] = useState(null)
+  const [customers, setCustomers] = useState([])
   const [form, setForm] = useState(emptyForm)
-  const [selectedId, setSelectedId] = useState(initialCustomers[0].id)
+  const [selectedId, setSelectedId] = useState(null)
   const [activePage, setActivePage] = useState('Customers')
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -28,6 +34,15 @@ function App() {
   const [editErrors, setEditErrors] = useState({})
   const [editDuplicateMatch, setEditDuplicateMatch] = useState(null)
   const [allowDuplicateUpdate, setAllowDuplicateUpdate] = useState(false)
+  const [customerLoadError, setCustomerLoadError] = useState('')
+
+  const activeUser = sessionUser
+    ? {
+        id: sessionUser.id,
+        name: sessionUser.fullName || sessionUser.email || '',
+        role: sessionUser.role || '',
+      }
+    : { id: null, name: '', role: '' }
 
   const visibleCustomers = useMemo(() => {
     return customers
@@ -48,6 +63,51 @@ function App() {
   const activeCount = customers.filter((customer) => customer.status === 'Active').length
   const inactiveCount = customers.length - activeCount
   const createdToday = customers.filter((customer) => formatDate(customer.createdAt) === formatDate(new Date())).length
+
+  function mapCustomerFromApi(customer) {
+    return {
+      id: customer.id,
+      name: customer.fullName,
+      phone: customer.phone,
+      normalizedPhone: normalizePhone(customer.phone || ''),
+      email: customer.email || '',
+      address: customer.address || '',
+      companyName: customer.company || '',
+      status: customer.isActive ? 'Active' : 'Inactive',
+      createdAt: customer.createdAt,
+      createdBy: customer.createdById ? `User #${customer.createdById}` : '-',
+      updatedAt: customer.updatedAt,
+      updatedBy: '-',
+      deactivatedAt: customer.isActive ? '' : customer.updatedAt,
+      deactivatedBy: customer.isActive ? '' : '-',
+      notes: [],
+      interactions: [],
+    }
+  }
+
+  async function loadCustomers() {
+    setCustomerLoadError('')
+
+    try {
+      const data = await getCustomers()
+      const nextCustomers = data.map(mapCustomerFromApi)
+      setCustomers(nextCustomers)
+      setSelectedId((currentId) => {
+        if (nextCustomers.some((customer) => customer.id === currentId)) return currentId
+        return nextCustomers[0]?.id ?? null
+      })
+    } catch (err) {
+      setCustomerLoadError(err.message || 'Failed to load customers from Supabase.')
+      setCustomers([])
+      setSelectedId(null)
+    }
+  }
+
+  useEffect(() => {
+    if (sessionUser) {
+      loadCustomers()
+    }
+  }, [sessionUser])
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -102,7 +162,7 @@ function App() {
     })
   }
 
-  function handleSaveCustomer(event) {
+  async function handleSaveCustomer(event) {
     event.preventDefault()
 
     const { isValid, normalizedPhone, email } = validateCustomer(form, setErrors)
@@ -115,35 +175,29 @@ function App() {
       return
     }
 
-    const now = new Date().toISOString()
-    const maxId = customers.reduce((highest, customer) => Math.max(highest, customer.id), 0)
-    const nextCustomer = {
-      id: maxId + 1,
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      normalizedPhone,
-      email,
-      address: form.address.trim(),
-      companyName: form.companyName.trim(),
-      status: 'Active',
-      createdAt: now,
-      createdBy: currentUser.name,
-      updatedAt: now,
-      updatedBy: currentUser.name,
-      deactivatedAt: '',
-      deactivatedBy: '',
-      notes: [],
-      interactions: [],
-    }
+    try {
+      const savedCustomer = await createCustomer({
+        fullName: form.name.trim(),
+        email,
+        phone: form.phone.trim(),
+        company: form.companyName.trim(),
+        address: form.address.trim(),
+        isActive: true,
+        createdById: activeUser.id,
+      })
 
-    setCustomers((current) => [nextCustomer, ...current])
-    setSelectedId(nextCustomer.id)
-    setActivePage('Customers')
-    setForm(emptyForm)
-    setDuplicateMatch(null)
-    setAllowDuplicate(false)
-    setShowCreateModal(false)
-    setPage(1)
+      const nextCustomer = mapCustomerFromApi(savedCustomer)
+      setCustomers((current) => [nextCustomer, ...current.filter((customer) => customer.id !== nextCustomer.id)])
+      setSelectedId(nextCustomer.id)
+      setActivePage('Customers')
+      setForm(emptyForm)
+      setDuplicateMatch(null)
+      setAllowDuplicate(false)
+      setShowCreateModal(false)
+      setPage(1)
+    } catch (err) {
+      setErrors({ contact: err.message || 'Failed to save customer.' })
+    }
   }
 
   function startEditCustomer(customer) {
@@ -174,7 +228,7 @@ function App() {
     setAllowDuplicateUpdate(false)
   }
 
-  function handleUpdateCustomer(event) {
+  async function handleUpdateCustomer(event) {
     event.preventDefault()
 
     if (!selectedCustomer) return
@@ -189,25 +243,24 @@ function App() {
       return
     }
 
-    const now = new Date().toISOString()
-    setCustomers((current) =>
-      current.map((customer) =>
-        customer.id === selectedCustomer.id
-          ? {
-              ...customer,
-              name: editForm.name.trim(),
-              phone: editForm.phone.trim(),
-              normalizedPhone,
-              email,
-              address: editForm.address.trim(),
-              companyName: editForm.companyName.trim(),
-              updatedAt: now,
-              updatedBy: currentUser.name,
-            }
-          : customer,
-      ),
-    )
-    cancelEditCustomer()
+    try {
+      const savedCustomer = await updateCustomer(selectedCustomer.id, {
+        fullName: editForm.name.trim(),
+        email,
+        phone: editForm.phone.trim(),
+        company: editForm.companyName.trim(),
+        address: editForm.address.trim(),
+        isActive: selectedCustomer.status === 'Active',
+      })
+
+      const nextCustomer = mapCustomerFromApi(savedCustomer)
+      setCustomers((current) =>
+        current.map((customer) => (customer.id === selectedCustomer.id ? nextCustomer : customer)),
+      )
+      cancelEditCustomer()
+    } catch (err) {
+      setEditErrors({ contact: err.message || 'Failed to update customer.' })
+    }
   }
 
   function changeSort(key) {
@@ -217,26 +270,21 @@ function App() {
     }))
   }
 
-  function deactivateCustomer(customerId) {
+  async function deactivateCustomer(customerId) {
     const confirmed = window.confirm('Deactivate this customer?')
     if (!confirmed) return
 
-    const now = new Date().toISOString()
     setIsEditing(false)
-    setCustomers((current) =>
-      current.map((customer) =>
-        customer.id === customerId
-          ? {
-              ...customer,
-              status: 'Inactive',
-              updatedAt: now,
-              updatedBy: currentUser.name,
-              deactivatedAt: now,
-              deactivatedBy: currentUser.name,
-            }
-          : customer,
-      ),
-    )
+
+    try {
+      const savedCustomer = await deactivateCustomerRequest(customerId)
+      const nextCustomer = mapCustomerFromApi(savedCustomer)
+      setCustomers((current) =>
+        current.map((customer) => (customer.id === customerId ? nextCustomer : customer)),
+      )
+    } catch (err) {
+      setCustomerLoadError(err.message || 'Failed to deactivate customer.')
+    }
   }
 
   function navigateTo(item) {
@@ -326,6 +374,7 @@ function App() {
           onToggleDuplicate={setAllowDuplicateUpdate}
           onUpdateForm={updateEditForm}
           selectedCustomer={selectedCustomer}
+          user={activeUser}
         />
       )}
     </AppLayout>
