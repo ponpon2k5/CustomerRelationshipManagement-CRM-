@@ -67,3 +67,7 @@ export function activateCustomer(customerId) {
     method: 'PATCH',
   })
 }
+
+export function searchCustomers(keyword) {
+  return request(`/api/customers/search?keyword=${encodeURIComponent(keyword)}`)
+}
