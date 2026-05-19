@@ -8,6 +8,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
+    boolean existsByEmail(String email);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
+
     @Query("""
             SELECT c FROM Customer c
             WHERE
@@ -16,11 +20,4 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
                 OR c.phone LIKE CONCAT('%', :keyword, '%')
             """)
     List<Customer> searchCustomers(@Param("keyword") String keyword);
-}
-import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface CustomerRepository extends JpaRepository<Customer, Long> {
-    boolean existsByEmail(String email);
-
-    boolean existsByEmailAndIdNot(String email, Long id);
 }
