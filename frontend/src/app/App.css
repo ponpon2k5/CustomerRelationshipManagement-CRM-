@@ -629,10 +629,12 @@ h3 {
   gap: 2px;
   font-size: 13px;
   color: #6a7584;
+  min-width: 130px;
 }
 
 .user-chip strong {
   color: #202733;
+  white-space: nowrap;
 }
 
 .user-chip button {
@@ -648,6 +650,37 @@ h3 {
 
 .user-chip button:hover {
   text-decoration: underline;
+}
+
+.api-banner {
+  margin: 0 28px;
+  padding: 10px 14px;
+  border: 1px solid #f1c6c6;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #9f2f2f;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.api-banner button {
+  border: 1px solid #e6b6b6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #9f2f2f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.api-banner button:hover {
+  background: #fff8f8;
 }
 
 .metrics {
@@ -812,6 +845,16 @@ th button {
   min-height: 42px;
   background: #258e67;
   color: #ffffff;
+}
+
+.primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .secondary-button {
@@ -1312,6 +1355,119 @@ td strong {
   margin: 16px;
 }
 
+.interaction-panel h3,
+.history-panel-heading h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #202733;
+}
+
+.interaction-panel-heading,
+.history-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.interaction-panel-heading p,
+.history-panel-heading p {
+  margin: 0;
+  color: #6a7584;
+  font-size: 13px;
+}
+
+.interaction-disabled {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid #f1c6c6;
+  border-radius: 8px;
+  background: #fff7f7;
+  color: #a93131;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.interaction-form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e1e8ef;
+}
+
+.interaction-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.interaction-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #4f5d6b;
+}
+
+.interaction-form input,
+.interaction-form select,
+.interaction-form textarea,
+.interaction-edit textarea {
+  width: 100%;
+  border: 1px solid #d5dee8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  color: #202733;
+  background: #fff;
+}
+
+.interaction-form input:disabled,
+.interaction-form select:disabled,
+.interaction-form textarea:disabled,
+.interaction-edit textarea:disabled {
+  cursor: not-allowed;
+  background: #f3f6f8;
+  color: #7a8794;
+}
+
+.interaction-error {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff1f2;
+  color: #b42334;
+  font-size: 13px;
+}
+
+.interaction-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.text-button {
+  border: 0;
+  background: transparent;
+  color: #1ba99f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.interaction-edit {
+  display: grid;
+  gap: 10px;
+}
+
+.interaction-edit .form-actions {
+  display: flex;
+  gap: 8px;
+}
+
 @media (max-width: 1060px) {
   .crm-shell {
     grid-template-columns: 78px minmax(0, 1fr);
@@ -1415,6 +1571,11 @@ td strong {
   .content-grid {
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .api-banner {
+    margin-left: 14px;
+    margin-right: 14px;
   }
 
   .metrics,

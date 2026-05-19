@@ -1,0 +1,26 @@
+package com.scrum.crm.dto.interaction;
+
+import com.scrum.crm.entity.InteractionType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class InteractionNoteCreateRequest {
+
+    @NotNull
+    private InteractionType interactionType;
+
+    private LocalDateTime interactionTime;
+
+    @NotBlank
+    private String noteContent;
+
+    @NotNull
+    private Long createdById;
+}
