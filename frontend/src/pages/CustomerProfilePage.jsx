@@ -1,6 +1,9 @@
+import { useCallback, useState } from 'react'
+import InteractionHistoryPanel from '../components/InteractionHistoryPanel'
 import Timeline from '../components/Timeline'
 import { currentUser } from '../data/customers'
 import { formatDateTime } from '../utils/customerUtils'
+import { toNoteItem } from '../utils/interactionUtils'
 
 export default function CustomerProfilePage({
   allowDuplicateUpdate,
@@ -17,6 +20,12 @@ export default function CustomerProfilePage({
   onUpdateForm,
   selectedCustomer,
 }) {
+  const [apiNotes, setApiNotes] = useState([])
+
+  const handleNotesChange = useCallback((interactions) => {
+    setApiNotes(interactions.map(toNoteItem))
+  }, [])
+
   if (!selectedCustomer) {
     return (
       <section className="panel detail-panel empty-profile">
@@ -128,13 +137,17 @@ export default function CustomerProfilePage({
 
       <section className="profile-history-grid" aria-label="Customer notes and interaction history">
         <div className="panel history-panel">
-          <Timeline title="Notes" items={selectedCustomer.notes} emptyText="No notes for this customer." />
+          <Timeline
+            title="Notes"
+            items={apiNotes}
+            emptyText="No notes for this customer."
+          />
         </div>
         <div className="panel history-panel">
-          <Timeline
-            title="Interaction History"
-            items={selectedCustomer.interactions}
-            emptyText="No interactions for this customer."
+          <InteractionHistoryPanel
+            createdById={currentUser.id}
+            customerId={selectedCustomer.id}
+            onNotesChange={handleNotesChange}
           />
         </div>
       </section>
