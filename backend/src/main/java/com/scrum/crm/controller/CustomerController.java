@@ -52,8 +52,7 @@ public class CustomerController {
     @PutMapping("/{id}")
     public CustomerResponse updateCustomer(
             @PathVariable Long id,
-            @Valid @RequestBody CustomerUpdateRequest request
-    ) {
+            @Valid @RequestBody CustomerUpdateRequest request) {
         return customerService.updateCustomer(id, request);
     }
 

@@ -52,13 +52,6 @@ public class CustomerService {
                 .toList();
     }
 
-    public List<CustomerResponse> searchCustomers(String keyword) {
-        return customerRepository.searchCustomers(keyword == null ? "" : keyword.trim())
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
     public CustomerResponse getCustomerById(Long id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id));
@@ -116,7 +109,13 @@ public class CustomerService {
                 customer.getIsActive(),
                 customer.getCreatedBy().getId(),
                 customer.getCreatedAt(),
-                customer.getUpdatedAt()
-        );
+                customer.getUpdatedAt());
+    }
+
+    public List<CustomerResponse> searchCustomers(String keyword) {
+        return customerRepository.searchCustomers(keyword == null ? "" : keyword.trim())
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 }

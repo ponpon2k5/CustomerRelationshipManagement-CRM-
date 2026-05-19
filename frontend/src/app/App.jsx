@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import AppLayout from '../components/AppLayout'
 import CustomersPage from '../pages/CustomersPage'
 import CustomerProfilePage from '../pages/CustomerProfilePage'
@@ -17,16 +18,16 @@ import './App.css'
 function mapCustomerFromApi(customer) {
   return {
     id: customer.id,
-    name: customer.fullName,
+    name: customer.fullName || '',
     phone: customer.phone || '',
     normalizedPhone: normalizePhone(customer.phone || ''),
     email: customer.email || '',
     address: customer.address || '',
     companyName: customer.company || '',
     status: customer.isActive ? 'Active' : 'Inactive',
-    createdAt: customer.createdAt,
+    createdAt: customer.createdAt || '',
     createdBy: customer.createdById ? `User #${customer.createdById}` : '-',
-    updatedAt: customer.updatedAt,
+    updatedAt: customer.updatedAt || '',
     updatedBy: '-',
     deactivatedAt: customer.isActive ? '' : customer.updatedAt,
     deactivatedBy: customer.isActive ? '' : '-',
@@ -40,7 +41,6 @@ function App() {
   const [customers, setCustomers] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [selectedId, setSelectedId] = useState(null)
-  const [activePage, setActivePage] = useState('Customers')
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showInactive, setShowInactive] = useState(false)
@@ -57,6 +57,9 @@ function App() {
   const [allowDuplicateUpdate, setAllowDuplicateUpdate] = useState(false)
   const [customerLoadError, setCustomerLoadError] = useState('')
 
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const activeUser = sessionUser
     ? {
         id: sessionUser.id,
@@ -65,12 +68,18 @@ function App() {
       }
     : { id: null, name: '', role: '' }
 
+  const activePage = useMemo(() => {
+    if (location.pathname.startsWith('/search')) return 'Search'
+    if (location.pathname.startsWith('/customers/') && location.pathname !== '/customers') return 'Profile'
+    return 'Customers'
+  }, [location.pathname])
+
   const visibleCustomers = useMemo(() => {
     return customers
       .filter((customer) => showInactive || customer.status === 'Active')
       .sort((a, b) => {
-        const left = sort.key === 'name' ? a.name.toLowerCase() : a.createdAt
-        const right = sort.key === 'name' ? b.name.toLowerCase() : b.createdAt
+        const left = sort.key === 'name' ? (a.name || '').toLowerCase() : (a.createdAt || '')
+        const right = sort.key === 'name' ? (b.name || '').toLowerCase() : (b.createdAt || '')
         const result = left.localeCompare(right)
         return sort.direction === 'asc' ? result : -result
       })
@@ -109,6 +118,30 @@ function App() {
     }
   }, [sessionUser])
 
+  useEffect(() => {
+    const match = location.pathname.match(/^\/customers\/(\d+)/)
+    if (!match) return
+
+    const nextId = Number(match[1])
+    if (!Number.isNaN(nextId)) {
+      setSelectedId(nextId)
+    }
+  }, [location.pathname])
+
+  function handleLogin(user) {
+    setSessionUser(user)
+    navigate('/customers', { replace: true })
+  }
+
+  function handleLogout() {
+    setSessionUser(null)
+    setCustomers([])
+    setSelectedId(null)
+    setSearchInput('')
+    setSearchQuery('')
+    navigate('/login', { replace: true })
+  }
+
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
     setErrors((current) => ({ ...current, [field]: '', contact: '' }))
@@ -120,7 +153,7 @@ function App() {
     const nextQuery = value.trim()
     setSearchInput(nextQuery)
     setSearchQuery(nextQuery)
-    setActivePage('Search')
+    navigate('/search')
   }
 
   function openCreateModal() {
@@ -188,12 +221,12 @@ function App() {
       const nextCustomer = mapCustomerFromApi(savedCustomer)
       setCustomers((current) => [nextCustomer, ...current.filter((customer) => customer.id !== nextCustomer.id)])
       setSelectedId(nextCustomer.id)
-      setActivePage('Customers')
       setForm(emptyForm)
       setDuplicateMatch(null)
       setAllowDuplicate(false)
       setShowCreateModal(false)
       setPage(1)
+      navigate('/customers')
     } catch (err) {
       setErrors({ contact: err.message || 'Failed to save customer.' })
     }
@@ -270,7 +303,7 @@ function App() {
   }
 
   async function deactivateCustomer(customerId) {
-    const confirmed = window.confirm('Deactivate this customer?')
+    const confirmed = globalThis.confirm('Deactivate this customer?')
     if (!confirmed) return
 
     setIsEditing(false)
@@ -287,7 +320,7 @@ function App() {
   }
 
   async function activateCustomer(customerId) {
-    const confirmed = window.confirm('Activate this customer again?')
+    const confirmed = globalThis.confirm('Activate this customer again?')
     if (!confirmed) return
 
     const customer = customers.find((item) => item.id === customerId)
@@ -318,35 +351,30 @@ function App() {
   }
 
   function navigateTo(item) {
-    if (item === 'Customers' || item === 'Profile' || item === 'Search') {
-      setActivePage(item)
-      cancelEditCustomer()
+    if (item === 'Customers') {
+      navigate('/customers')
+    } else if (item === 'Search') {
+      navigate('/search')
+    } else if (item === 'Profile') {
+      navigate(selectedId ? `/customers/${selectedId}` : '/customers')
     }
+    cancelEditCustomer()
   }
 
   function openProfile(customerId) {
     setSelectedId(customerId)
-    setActivePage('Profile')
+    navigate(`/customers/${customerId}`)
     cancelEditCustomer()
   }
 
-  function logout() {
-    setSessionUser(null)
-    setCustomers([])
-    setSelectedId(null)
-    setSearchInput('')
-    setSearchQuery('')
-    setActivePage('Customers')
-  }
-
   if (!sessionUser) {
-    return <LoginPage onLogin={setSessionUser} />
+    return <LoginPage onLogin={handleLogin} />
   }
 
   return (
     <AppLayout
       activePage={activePage}
-      onLogout={logout}
+      onLogout={handleLogout}
       onNavigate={navigateTo}
       onSearch={submitSearch}
       searchInput={searchInput}
@@ -357,74 +385,91 @@ function App() {
         <div className="api-banner" role="alert">
           <span>{customerLoadError}</span>
           <button type="button" onClick={loadCustomers}>Retry</button>
+          <button type="button" onClick={() => setCustomerLoadError('')}>Dismiss</button>
         </div>
       )}
 
-      {activePage === 'Search' ? (
-        <SearchPage
-          customers={customers}
-          query={searchQuery}
-          searchInput={searchInput}
-          setSearchInput={setSearchInput}
-          onSearch={submitSearch}
-          onOpenProfile={openProfile}
+      <Routes>
+        <Route path="/" element={<Navigate to="/customers" replace />} />
+        <Route path="/login" element={<Navigate to="/customers" replace />} />
+        <Route
+          path="/customers"
+          element={(
+            <CustomersPage
+              activeCount={activeCount}
+              allowDuplicate={allowDuplicate}
+              createdToday={createdToday}
+              duplicateMatch={duplicateMatch}
+              errors={errors}
+              form={form}
+              inactiveCount={inactiveCount}
+              onActivate={activateCustomer}
+              onChangeSort={changeSort}
+              onCloseCreate={closeCreateModal}
+              onOpenCreate={openCreateModal}
+              onOpenProfile={openProfile}
+              onSaveCustomer={handleSaveCustomer}
+              onSelectCustomer={(customerId) => {
+                setSelectedId(customerId)
+                cancelEditCustomer()
+              }}
+              onShowInactiveChange={(checked) => {
+                setShowInactive(checked)
+                setPage(1)
+              }}
+              onToggleDuplicate={setAllowDuplicate}
+              onUpdateForm={updateForm}
+              page={page}
+              pageCustomers={pageCustomers}
+              selectedCustomer={selectedCustomer}
+              setPage={setPage}
+              showCreateModal={showCreateModal}
+              showInactive={showInactive}
+              totalPages={totalPages}
+              visibleCustomers={visibleCustomers}
+            />
+          )}
         />
-      ) : activePage === 'Customers' ? (
-        <CustomersPage
-          activeCount={activeCount}
-          allowDuplicate={allowDuplicate}
-          createdToday={createdToday}
-          duplicateMatch={duplicateMatch}
-          errors={errors}
-          form={form}
-          inactiveCount={inactiveCount}
-          onActivate={activateCustomer}
-          onChangeSort={changeSort}
-          onCloseCreate={closeCreateModal}
-          onOpenCreate={openCreateModal}
-          onOpenProfile={openProfile}
-          onSaveCustomer={handleSaveCustomer}
-          onSelectCustomer={(customerId) => {
-            setSelectedId(customerId)
-            cancelEditCustomer()
-          }}
-          onShowInactiveChange={(checked) => {
-            setShowInactive(checked)
-            setPage(1)
-          }}
-          onToggleDuplicate={setAllowDuplicate}
-          onUpdateForm={updateForm}
-          page={page}
-          pageCustomers={pageCustomers}
-          selectedCustomer={selectedCustomer}
-          setPage={setPage}
-          showCreateModal={showCreateModal}
-          showInactive={showInactive}
-          totalPages={totalPages}
-          visibleCustomers={visibleCustomers}
+        <Route
+          path="/customers/:id"
+          element={(
+            <CustomerProfilePage
+              allowDuplicateUpdate={allowDuplicateUpdate}
+              editDuplicateMatch={editDuplicateMatch}
+              editErrors={editErrors}
+              editForm={editForm}
+              isEditing={isEditing}
+              onBackToList={() => {
+                navigate('/customers')
+                cancelEditCustomer()
+              }}
+              onCancelEdit={cancelEditCustomer}
+              onActivate={activateCustomer}
+              onDeactivate={deactivateCustomer}
+              onSave={handleUpdateCustomer}
+              onStartEdit={startEditCustomer}
+              onToggleDuplicate={setAllowDuplicateUpdate}
+              onUpdateForm={updateEditForm}
+              selectedCustomer={selectedCustomer}
+              user={activeUser}
+            />
+          )}
         />
-      ) : (
-        <CustomerProfilePage
-          allowDuplicateUpdate={allowDuplicateUpdate}
-          editDuplicateMatch={editDuplicateMatch}
-          editErrors={editErrors}
-          editForm={editForm}
-          isEditing={isEditing}
-          onBackToList={() => {
-            setActivePage('Customers')
-            cancelEditCustomer()
-          }}
-          onCancelEdit={cancelEditCustomer}
-          onActivate={activateCustomer}
-          onDeactivate={deactivateCustomer}
-          onSave={handleUpdateCustomer}
-          onStartEdit={startEditCustomer}
-          onToggleDuplicate={setAllowDuplicateUpdate}
-          onUpdateForm={updateEditForm}
-          selectedCustomer={selectedCustomer}
-          user={activeUser}
+        <Route
+          path="/search"
+          element={(
+            <SearchPage
+              customers={customers}
+              query={searchQuery}
+              searchInput={searchInput}
+              setSearchInput={setSearchInput}
+              onSearch={submitSearch}
+              onOpenProfile={openProfile}
+            />
+          )}
         />
-      )}
+        <Route path="*" element={<Navigate to="/customers" replace />} />
+      </Routes>
     </AppLayout>
   )
 }

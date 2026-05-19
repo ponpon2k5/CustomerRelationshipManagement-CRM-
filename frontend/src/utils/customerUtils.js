@@ -1,5 +1,5 @@
 export function normalizePhone(phone) {
-  return phone.replace(/\D/g, '')
+  return String(phone || '').replace(/\D/g, '')
 }
 
 export function formatDateTime(value) {
@@ -14,6 +14,7 @@ export function formatDateTime(value) {
 }
 
 export function formatDate(value) {
+  if (!value) return '-'
   return new Intl.DateTimeFormat('en', {
     month: 'short',
     day: 'numeric',
