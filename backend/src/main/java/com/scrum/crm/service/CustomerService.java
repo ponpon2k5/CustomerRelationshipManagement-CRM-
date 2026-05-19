@@ -1,29 +1,5 @@
 package com.scrum.crm.service;
 
-import com.scrum.crm.dto.customer.CustomerResponse;
-import com.scrum.crm.entity.Customer;
-import com.scrum.crm.repository.CustomerRepository;
-import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-@Service
-@RequiredArgsConstructor
-public class CustomerService {
-
-    private final CustomerRepository customerRepository;
-
-    public List<CustomerResponse> searchCustomers(String keyword) {
-
-        List<Customer> customers =
-                customerRepository.searchCustomers(keyword);
-
-        return customers.stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
-    private CustomerResponse mapToResponse(Customer customer) {
 import com.scrum.crm.dto.customer.CustomerCreateRequest;
 import com.scrum.crm.dto.customer.CustomerResponse;
 import com.scrum.crm.dto.customer.CustomerUpdateRequest;
@@ -46,6 +22,13 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+
+    public List<CustomerResponse> searchCustomers(String keyword) {
+        List<Customer> customers = customerRepository.searchCustomers(keyword);
+        return customers.stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
     @Transactional
     public CustomerResponse createCustomer(CustomerCreateRequest request) {
@@ -123,11 +106,6 @@ public class CustomerService {
                 customer.getIsActive(),
                 customer.getCreatedBy().getId(),
                 customer.getCreatedAt(),
-                customer.getUpdatedAt()
-        );
+                customer.getUpdatedAt());
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> cd04fcb859669ea33ab309ec650576c2d4e220ea
