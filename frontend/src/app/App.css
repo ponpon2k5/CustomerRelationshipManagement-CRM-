@@ -1472,3 +1472,41 @@ td strong {
     flex-direction: column;
   }
 }
+
+.suggestion-box {
+  width: min(760px, 100%);
+  margin: -6px auto 0;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(28, 43, 58, 0.18);
+  z-index: 5;
+}
+
+.suggestion-item {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #202733;
+  text-align: left;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background: #f0f8f4;
+}
+
+.suggestion-item strong {
+  font-size: 14px;
+}
+
+.suggestion-item span {
+  color: #6a7584;
+  font-size: 12px;
+}

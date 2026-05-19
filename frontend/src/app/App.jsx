@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { searchCustomers } from "../services/api/customerApi";
 import './App.css'
 
 const MOCK_USER = { email: 'admin@crm.com', password: '123456' }
@@ -453,13 +454,46 @@ function CustomerDashboard({ onLogout, sessionUser }) {
     setAllowDuplicate(false)
   }
 
-  function submitSearch(value = searchInput) {
-    const nextQuery = value.trim()
-    setSearchInput(nextQuery)
-    setSearchQuery(nextQuery)
-    setActivePage('Search')
-    cancelEditCustomer()
+ async function submitSearch(value = searchInput) {
+  const nextQuery = value.trim()
+
+  setSearchInput(nextQuery)
+  setSearchQuery(nextQuery)
+  setActivePage('Search')
+
+  if (!nextQuery) {
+    setCustomers([])
+    return
   }
+
+  try {
+    const data = await searchCustomers(nextQuery)
+
+    const mappedCustomers = data.map((customer) => ({
+      id: customer.id,
+      name: customer.fullName,
+      phone: customer.phone || '',
+      normalizedPhone: (customer.phone || '').replace(/\D/g, ''),
+      email: customer.email || '',
+      address: customer.address || '',
+      companyName: customer.company || '',
+      status: customer.isActive ? 'Active' : 'Inactive',
+      createdAt: customer.createdAt,
+      createdBy: 'System',
+      updatedAt: customer.updatedAt,
+      updatedBy: 'System',
+      deactivatedAt: '',
+      deactivatedBy: '',
+      notes: [],
+      interactions: [],
+    }))
+
+    setCustomers(mappedCustomers)
+  } catch (error) {
+    console.error('API ERROR:', error)
+    alert('Cannot connect to backend API.')
+  }
+}
 
   function openCreateModal() {
     setForm(emptyForm)
@@ -1053,8 +1087,43 @@ function Timeline({ title, items, emptyText }) {
 }
 
 function SearchPage({ customers, query, searchInput, setSearchInput, onSearch, onOpenProfile }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
   const quickSearches = ['Skinder', 'Viva Health', 'inactive', 'email', 'onboarding', 'migration']
   const normalizedQuery = query.trim().toLowerCase()
+
+  async function handleSuggest(value) {
+    setSearchInput(value)
+
+    const keyword = value.trim()
+
+    if (keyword.length < 2) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+
+    try {
+      const data = await searchCustomers(keyword)
+
+      const mappedSuggestions = data.map((customer) => ({
+        id: customer.id,
+        name: customer.fullName,
+        phone: customer.phone || '',
+        email: customer.email || '',
+        companyName: customer.company || '',
+        status: customer.isActive ? 'Active' : 'Inactive',
+      }))
+
+      setSuggestions(mappedSuggestions.slice(0, 5))
+      setShowSuggestions(true)
+    } catch (error) {
+      console.error('Suggestion API error:', error)
+      setSuggestions([])
+      setShowSuggestions(false)
+    }
+  }
 
   const results = useMemo(() => {
     if (!normalizedQuery) return customers
@@ -1088,30 +1157,64 @@ function SearchPage({ customers, query, searchInput, setSearchInput, onSearch, o
         <div className="search-hero-content">
           <p className="eyebrow">CRM Search</p>
           <h2>Find customers, notes, and interaction history</h2>
+
           <form
             className="search-hero-form"
             onSubmit={(event) => {
               event.preventDefault()
+              setShowSuggestions(false)
               onSearch(searchInput)
             }}
           >
             <span aria-hidden="true">⌕</span>
             <input
               value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search by name, phone, email, company, notes..."
+              onChange={(event) => handleSuggest(event.target.value)}
+              onFocus={() => {
+                if (suggestions.length > 0) setShowSuggestions(true)
+              }}
+              placeholder="Search by name, phone, email..."
               type="search"
             />
+
             {searchInput && (
-              <button className="clear-search" type="button" onClick={() => {
-                setSearchInput('')
-                onSearch('')
-              }}>
+              <button
+                className="clear-search"
+                type="button"
+                onClick={() => {
+                  setSearchInput('')
+                  setSuggestions([])
+                  setShowSuggestions(false)
+                  onSearch('')
+                }}
+              >
                 ×
               </button>
             )}
+
             <button className="hero-search-button" type="submit">Search</button>
           </form>
+
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="suggestion-box">
+              {suggestions.map((customer) => (
+                <button
+                  key={customer.id}
+                  type="button"
+                  className="suggestion-item"
+                  onClick={() => {
+                    setSearchInput(customer.name)
+                    setShowSuggestions(false)
+                    onSearch(customer.name)
+                  }}
+                >
+                  <strong>{customer.name}</strong>
+                  <span>{customer.phone || '-'} · {customer.email || '-'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="quick-searches">
             {quickSearches.map((item) => (
               <button key={item} type="button" onClick={() => onSearch(item)}>
@@ -1140,6 +1243,7 @@ function SearchPage({ customers, query, searchInput, setSearchInput, onSearch, o
                 <div className="result-avatar" aria-hidden="true">
                   {customer.name.charAt(0)}
                 </div>
+
                 <div className="result-body">
                   <div className="result-title-row">
                     <div>
@@ -1148,6 +1252,7 @@ function SearchPage({ customers, query, searchInput, setSearchInput, onSearch, o
                     </div>
                     <span className={`status-pill ${customer.status.toLowerCase()}`}>{customer.status}</span>
                   </div>
+
                   <div className="result-meta-grid">
                     <span>Phone<strong>{customer.phone || '-'}</strong></span>
                     <span>Email<strong>{customer.email || '-'}</strong></span>
@@ -1155,6 +1260,7 @@ function SearchPage({ customers, query, searchInput, setSearchInput, onSearch, o
                     <span>Activity<strong>{customer.notes.length} notes · {customer.interactions.length} interactions</strong></span>
                   </div>
                 </div>
+
                 <button className="primary-button" type="button" onClick={() => onOpenProfile(customer.id)}>
                   Open Profile
                 </button>
