@@ -629,10 +629,12 @@ h3 {
   gap: 2px;
   font-size: 13px;
   color: #6a7584;
+  min-width: 130px;
 }
 
 .user-chip strong {
   color: #202733;
+  white-space: nowrap;
 }
 
 .user-chip button {
