@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
-
-const MOCK_USER = { email: 'admin@crm.com', password: '123456' }
+import { createCustomer, deactivateCustomer as deactivateCustomerApi, getCustomerById, getCustomers, updateCustomer } from '../services/customerApi'
+import { login, register } from '../services/authApi'
 
 const currentUser = {
   name: 'Amelia Burrows',
   role: 'Admin',
 }
+
+const DEFAULT_CREATED_BY_ID = Number(import.meta.env.VITE_CREATED_BY_ID || 1)
 
 const IconUser = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -165,8 +167,53 @@ const emptyForm = {
   companyName: '',
 }
 
+function mapApiCustomerToUi(customer) {
+  return {
+    id: customer.id,
+    name: customer.fullName || '',
+    phone: customer.phone || '',
+    normalizedPhone: normalizePhone(customer.phone || ''),
+    email: customer.email || '',
+    address: customer.address || '',
+    companyName: customer.company || '',
+    status: customer.isActive ? 'Active' : 'Inactive',
+    createdAt: customer.createdAt || '',
+    createdBy: customer.createdById ? `User #${customer.createdById}` : '-',
+    createdById: customer.createdById || DEFAULT_CREATED_BY_ID,
+    updatedAt: customer.updatedAt || '',
+    updatedBy: customer.createdById ? `User #${customer.createdById}` : '-',
+    deactivatedAt: '',
+    deactivatedBy: '',
+    notes: [],
+    interactions: [],
+  }
+}
+
+function mapUiFormToCreatePayload(form) {
+  return {
+    fullName: form.name.trim(),
+    phone: form.phone.trim(),
+    email: form.email.trim().toLowerCase(),
+    address: form.address.trim(),
+    company: form.companyName.trim(),
+    isActive: true,
+    createdById: DEFAULT_CREATED_BY_ID,
+  }
+}
+
+function mapUiFormToUpdatePayload(form, customer) {
+  return {
+    fullName: form.name.trim(),
+    phone: form.phone.trim(),
+    email: form.email.trim().toLowerCase(),
+    address: form.address.trim(),
+    company: form.companyName.trim(),
+    isActive: customer.status === 'Active',
+  }
+}
+
 function normalizePhone(phone) {
-  return phone.replace(/\D/g, '')
+  return String(phone || '').replace(/\D/g, '')
 }
 
 function formatDateTime(value) {
@@ -181,6 +228,7 @@ function formatDateTime(value) {
 }
 
 function formatDate(value) {
+  if (!value) return '-'
   return new Intl.DateTimeFormat('en', {
     month: 'short',
     day: 'numeric',
@@ -254,22 +302,37 @@ function CRMLogin({ onLogin }) {
     })
 
     if (!isLogin) {
-      setPage('login')
-      setPassword('')
-      setName('')
-      setErrors({ general: 'Tài khoản đã tạo. Hãy đăng nhập để tiếp tục.' })
-      setLoading(false)
+      try {
+        await register({
+          fullName: name.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+        })
+        setPage('login')
+        setPassword('')
+        setName('')
+        setErrors({ general: 'Account created. Please sign in.' })
+      } catch (error) {
+        setErrors({ general: error.message || 'Sign-up failed.' })
+        triggerShake()
+      } finally {
+        setLoading(false)
+      }
       return
     }
 
-    if (email.trim().toLowerCase() === MOCK_USER.email && password === MOCK_USER.password) {
-      onLogin(email.split('@')[0])
-    } else {
-      setErrors({ general: 'Email hoặc mật khẩu không chính xác. Vui lòng thử lại.' })
+    try {
+      const loginResponse = await login({
+        email: email.trim().toLowerCase(),
+        password,
+      })
+      onLogin(loginResponse.fullName || loginResponse.email)
+    } catch (error) {
+      setErrors({ general: error.message || 'Email hoặc mật khẩu không chính xác. Vui lòng thử lại.' })
       triggerShake()
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   return (
@@ -380,7 +443,7 @@ function CRMLogin({ onLogin }) {
 
           {isLogin && (
             <p className="demo-hint">
-              Demo: <code>admin@crm.com</code> / <code>123456</code>
+              Use an existing backend user account.
             </p>
           )}
         </form>
@@ -407,9 +470,9 @@ function AuthField({ error, icon, label, onChange, placeholder, rightControl, ty
 }
 
 function CustomerDashboard({ onLogout, sessionUser }) {
-  const [customers, setCustomers] = useState(initialCustomers)
+  const [customers, setCustomers] = useState([])
   const [form, setForm] = useState(emptyForm)
-  const [selectedId, setSelectedId] = useState(initialCustomers[0].id)
+  const [selectedId, setSelectedId] = useState(null)
   const [activePage, setActivePage] = useState('Customers')
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -425,6 +488,32 @@ function CustomerDashboard({ onLogout, sessionUser }) {
   const [editErrors, setEditErrors] = useState({})
   const [editDuplicateMatch, setEditDuplicateMatch] = useState(null)
   const [allowDuplicateUpdate, setAllowDuplicateUpdate] = useState(false)
+  const [isLoadingCustomers, setIsLoadingCustomers] = useState(false)
+  const [apiError, setApiError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  async function loadCustomers() {
+    setIsLoadingCustomers(true)
+    setApiError('')
+    try {
+      const response = await getCustomers()
+      const mappedCustomers = response.map(mapApiCustomerToUi)
+      setCustomers(mappedCustomers)
+      setSelectedId((current) => {
+        if (!mappedCustomers.length) return null
+        if (current && mappedCustomers.some((customer) => customer.id === current)) return current
+        return mappedCustomers[0].id
+      })
+    } catch (error) {
+      setApiError(error.message || 'Failed to load customers.')
+    } finally {
+      setIsLoadingCustomers(false)
+    }
+  }
+
+  useEffect(() => {
+    loadCustomers()
+  }, [])
 
   const visibleCustomers = useMemo(() => {
     return customers
@@ -478,12 +567,16 @@ function CustomerDashboard({ onLogout, sessionUser }) {
 
   function validateCustomer(values, setErrorState) {
     const nextErrors = {}
-    const normalizedPhone = normalizePhone(values.phone)
+    const phoneRaw = String(values.phone || '').trim()
+    const normalizedPhone = normalizePhone(phoneRaw)
     const email = values.email.trim().toLowerCase()
 
     if (!values.name.trim()) nextErrors.name = 'Customer name is required.'
-    if (!normalizedPhone && !email) nextErrors.contact = 'Enter phone number or email.'
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Email format is invalid.'
+    if (!normalizedPhone) nextErrors.phone = 'Phone number is required.'
+    else if (!/^[+\d\s().-]+$/.test(phoneRaw)) nextErrors.phone = 'Phone number contains invalid characters.'
+    else if (normalizedPhone.length < 8 || normalizedPhone.length > 15) nextErrors.phone = 'Phone number must be 8-15 digits.'
+    if (!email) nextErrors.email = 'Email is required.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Email format is invalid.'
 
     setErrorState(nextErrors)
     return { isValid: Object.keys(nextErrors).length === 0, normalizedPhone, email }
@@ -499,7 +592,7 @@ function CustomerDashboard({ onLogout, sessionUser }) {
     })
   }
 
-  function handleSaveCustomer(event) {
+  async function handleSaveCustomer(event) {
     event.preventDefault()
 
     const { isValid, normalizedPhone, email } = validateCustomer(form, setErrors)
@@ -512,34 +605,24 @@ function CustomerDashboard({ onLogout, sessionUser }) {
       return
     }
 
-    const now = new Date().toISOString()
-    const nextCustomer = {
-      id: Math.max(...customers.map((customer) => customer.id)) + 1,
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      normalizedPhone,
-      email,
-      address: form.address.trim(),
-      companyName: form.companyName.trim(),
-      status: 'Active',
-      createdAt: now,
-      createdBy: currentUser.name,
-      updatedAt: now,
-      updatedBy: currentUser.name,
-      deactivatedAt: '',
-      deactivatedBy: '',
-      notes: [],
-      interactions: [],
+    setIsSaving(true)
+    setApiError('')
+    try {
+      const createdCustomer = await createCustomer(mapUiFormToCreatePayload(form))
+      const mappedCustomer = mapApiCustomerToUi(createdCustomer)
+      setCustomers((current) => [mappedCustomer, ...current])
+      setSelectedId(mappedCustomer.id)
+      setActivePage('Customers')
+      setForm(emptyForm)
+      setDuplicateMatch(null)
+      setAllowDuplicate(false)
+      setShowCreateModal(false)
+      setPage(1)
+    } catch (error) {
+      setApiError(error.message || 'Failed to create customer.')
+    } finally {
+      setIsSaving(false)
     }
-
-    setCustomers((current) => [nextCustomer, ...current])
-    setSelectedId(nextCustomer.id)
-    setActivePage('Customers')
-    setForm(emptyForm)
-    setDuplicateMatch(null)
-    setAllowDuplicate(false)
-    setShowCreateModal(false)
-    setPage(1)
   }
 
   function startEditCustomer(customer) {
@@ -558,7 +641,7 @@ function CustomerDashboard({ onLogout, sessionUser }) {
 
   function updateEditForm(field, value) {
     setEditForm((current) => ({ ...current, [field]: value }))
-    setEditErrors((current) => ({ ...current, [field]: '', contact: '' }))
+    setEditErrors((current) => ({ ...current, [field]: '' }))
     setEditDuplicateMatch(null)
     setAllowDuplicateUpdate(false)
   }
@@ -570,7 +653,7 @@ function CustomerDashboard({ onLogout, sessionUser }) {
     setAllowDuplicateUpdate(false)
   }
 
-  function handleUpdateCustomer(event) {
+  async function handleUpdateCustomer(event) {
     event.preventDefault()
 
     if (!selectedCustomer) return
@@ -585,25 +668,32 @@ function CustomerDashboard({ onLogout, sessionUser }) {
       return
     }
 
-    const now = new Date().toISOString()
-    setCustomers((current) =>
-      current.map((customer) =>
-        customer.id === selectedCustomer.id
-          ? {
-              ...customer,
-              name: editForm.name.trim(),
-              phone: editForm.phone.trim(),
-              normalizedPhone,
-              email,
-              address: editForm.address.trim(),
-              companyName: editForm.companyName.trim(),
-              updatedAt: now,
-              updatedBy: currentUser.name,
-            }
-          : customer,
-      ),
-    )
-    cancelEditCustomer()
+    setIsSaving(true)
+    setApiError('')
+    try {
+      const updatedCustomer = await updateCustomer(
+        selectedCustomer.id,
+        mapUiFormToUpdatePayload(editForm, selectedCustomer),
+      )
+      const mappedCustomer = mapApiCustomerToUi(updatedCustomer)
+      setCustomers((current) =>
+        current.map((customer) =>
+          customer.id === selectedCustomer.id
+            ? {
+                ...customer,
+                ...mappedCustomer,
+                notes: customer.notes,
+                interactions: customer.interactions,
+              }
+            : customer,
+        ),
+      )
+      cancelEditCustomer()
+    } catch (error) {
+      setApiError(error.message || 'Failed to update customer.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   function changeSort(key) {
@@ -613,26 +703,65 @@ function CustomerDashboard({ onLogout, sessionUser }) {
     }))
   }
 
-  function deactivateCustomer(customerId) {
+  async function deactivateCustomer(customerId) {
     const confirmed = window.confirm('Deactivate this customer?')
     if (!confirmed) return
 
-    const now = new Date().toISOString()
-    setIsEditing(false)
-    setCustomers((current) =>
-      current.map((customer) =>
-        customer.id === customerId
-          ? {
-              ...customer,
-              status: 'Inactive',
-              updatedAt: now,
-              updatedBy: currentUser.name,
-              deactivatedAt: now,
-              deactivatedBy: currentUser.name,
-            }
-          : customer,
-      ),
-    )
+    setIsSaving(true)
+    setApiError('')
+    try {
+      const updatedCustomer = await deactivateCustomerApi(customerId)
+      const mappedCustomer = mapApiCustomerToUi(updatedCustomer)
+      const now = new Date().toISOString()
+      const actor = sessionUser || currentUser.name
+
+      setCustomers((current) =>
+        current.map((customer) =>
+          customer.id === customerId
+            ? {
+                ...customer,
+                ...mappedCustomer,
+                deactivatedAt: customer.deactivatedAt || now,
+                deactivatedBy: customer.deactivatedBy || actor,
+                updatedBy: actor,
+                notes: customer.notes,
+                interactions: customer.interactions,
+              }
+            : customer,
+        ),
+      )
+      cancelEditCustomer()
+    } catch (error) {
+      setApiError(error.message || 'Failed to deactivate customer.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function openProfile(customerId) {
+    setSelectedId(customerId)
+    setActivePage('Profile')
+    cancelEditCustomer()
+    setApiError('')
+
+    try {
+      const customerDetail = await getCustomerById(customerId)
+      const mappedCustomer = mapApiCustomerToUi(customerDetail)
+      setCustomers((current) =>
+        current.map((customer) =>
+          customer.id === customerId
+            ? {
+                ...customer,
+                ...mappedCustomer,
+                notes: customer.notes,
+                interactions: customer.interactions,
+              }
+            : customer,
+        ),
+      )
+    } catch (error) {
+      setApiError(error.message || 'Failed to load customer details.')
+    }
   }
 
   return (
@@ -697,6 +826,13 @@ function CustomerDashboard({ onLogout, sessionUser }) {
           </div>
         </header>
 
+        {apiError && (
+          <div className="api-banner">
+            <span>{apiError}</span>
+            <button type="button" onClick={() => setApiError('')}>Dismiss</button>
+          </div>
+        )}
+
         {activePage === 'Search' ? (
           <SearchPage
             customers={customers}
@@ -704,11 +840,7 @@ function CustomerDashboard({ onLogout, sessionUser }) {
             searchInput={searchInput}
             setSearchInput={setSearchInput}
             onSearch={submitSearch}
-            onOpenProfile={(customerId) => {
-              setSelectedId(customerId)
-              setActivePage('Profile')
-              cancelEditCustomer()
-            }}
+            onOpenProfile={openProfile}
           />
         ) : activePage === 'Customers' ? (
           <>
@@ -756,7 +888,9 @@ function CustomerDashboard({ onLogout, sessionUser }) {
               </div>
             </div>
 
-            {visibleCustomers.length === 0 ? (
+            {isLoadingCustomers ? (
+              <div className="empty-state">Loading customers...</div>
+            ) : visibleCustomers.length === 0 ? (
               <div className="empty-state">No customers found.</div>
             ) : (
               <>
@@ -800,9 +934,7 @@ function CustomerDashboard({ onLogout, sessionUser }) {
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation()
-                                setSelectedId(customer.id)
-                                cancelEditCustomer()
-                                setActivePage('Profile')
+                                openProfile(customer.id)
                               }}
                             >
                               Detail Profile
@@ -860,6 +992,7 @@ function CustomerDashboard({ onLogout, sessionUser }) {
                   <label>
                     Phone number
                     <input value={form.phone} onChange={(event) => updateForm('phone', event.target.value)} />
+                    {errors.phone && <span className="field-error">{errors.phone}</span>}
                   </label>
                   <label>
                     Email
@@ -867,7 +1000,6 @@ function CustomerDashboard({ onLogout, sessionUser }) {
                     {errors.email && <span className="field-error">{errors.email}</span>}
                   </label>
                 </div>
-                {errors.contact && <span className="field-error">{errors.contact}</span>}
                 <label>
                   Address
                   <input value={form.address} onChange={(event) => updateForm('address', event.target.value)} />
@@ -893,7 +1025,9 @@ function CustomerDashboard({ onLogout, sessionUser }) {
                 )}
 
                 <div className="form-actions">
-                  <button className="primary-button" type="submit">Save Customer</button>
+                  <button className="primary-button" disabled={isSaving} type="submit">
+                    {isSaving ? 'Saving...' : 'Save Customer'}
+                  </button>
                   <button className="secondary-button" type="button" onClick={closeCreateModal}>Cancel</button>
                 </div>
               </form>
@@ -927,8 +1061,13 @@ function CustomerDashboard({ onLogout, sessionUser }) {
                   </button>
                 )}
                 {currentUser.role === 'Admin' && selectedCustomer.status === 'Active' && !isEditing && (
-                  <button className="danger-button" type="button" onClick={() => deactivateCustomer(selectedCustomer.id)}>
-                    Deactivate
+                  <button
+                    className="danger-button"
+                    disabled={isSaving}
+                    type="button"
+                    onClick={() => deactivateCustomer(selectedCustomer.id)}
+                  >
+                    {isSaving ? 'Deactivating...' : 'Deactivate'}
                   </button>
                 )}
               </div>
@@ -945,13 +1084,13 @@ function CustomerDashboard({ onLogout, sessionUser }) {
                   <label>
                     Phone number
                     <input value={editForm.phone} onChange={(event) => updateEditForm('phone', event.target.value)} />
+                    {editErrors.phone && <span className="field-error">{editErrors.phone}</span>}
                   </label>
                   <label>
                     Email
                     <input value={editForm.email} onChange={(event) => updateEditForm('email', event.target.value)} />
                     {editErrors.email && <span className="field-error">{editErrors.email}</span>}
                   </label>
-                  {editErrors.contact && <span className="field-error">{editErrors.contact}</span>}
                   <label>
                     Address
                     <input value={editForm.address} onChange={(event) => updateEditForm('address', event.target.value)} />
@@ -985,7 +1124,9 @@ function CustomerDashboard({ onLogout, sessionUser }) {
                   </div>
 
                   <div className="form-actions">
-                    <button className="primary-button" type="submit">Save Changes</button>
+                    <button className="primary-button" disabled={isSaving} type="submit">
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
                     <button className="secondary-button" type="button" onClick={cancelEditCustomer}>Cancel</button>
                   </div>
                 </form>
@@ -1183,3 +1324,4 @@ function App() {
 }
 
 export default App
+
