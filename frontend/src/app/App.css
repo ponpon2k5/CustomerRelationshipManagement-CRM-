@@ -652,6 +652,37 @@ h3 {
   text-decoration: underline;
 }
 
+.api-banner {
+  margin: 0 28px;
+  padding: 10px 14px;
+  border: 1px solid #f1c6c6;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #9f2f2f;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.api-banner button {
+  border: 1px solid #e6b6b6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #9f2f2f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.api-banner button:hover {
+  background: #fff8f8;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -814,6 +845,11 @@ th button {
   min-height: 42px;
   background: #258e67;
   color: #ffffff;
+}
+
+.primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .secondary-button {
@@ -1417,6 +1453,11 @@ td strong {
   .content-grid {
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .api-banner {
+    margin-left: 14px;
+    margin-right: 14px;
   }
 
   .metrics,
