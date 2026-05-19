@@ -1,6 +1,7 @@
 export const MOCK_USER = { email: 'admin@crm.com', password: '123456' }
 
 export const currentUser = {
+  id: Number(import.meta.env.VITE_DEFAULT_USER_ID) || 1,
   name: 'Amelia Burrows',
   role: 'Admin',
 }
