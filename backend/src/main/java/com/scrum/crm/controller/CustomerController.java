@@ -28,12 +28,6 @@ public class CustomerController {
 
     private final CustomerService customerService;
 
-    @GetMapping("/search")
-    public List<CustomerResponse> searchCustomers(
-            @RequestParam String keyword) {
-        return customerService.searchCustomers(keyword);
-    }
-
     @PostMapping
     public ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CustomerCreateRequest request) {
         CustomerResponse response = customerService.createCustomer(request);
@@ -43,6 +37,11 @@ public class CustomerController {
     @GetMapping
     public List<CustomerResponse> getCustomers() {
         return customerService.getCustomers();
+    }
+
+    @GetMapping("/search")
+    public List<CustomerResponse> searchCustomers(@RequestParam String keyword) {
+        return customerService.searchCustomers(keyword);
     }
 
     @GetMapping("/{id}")

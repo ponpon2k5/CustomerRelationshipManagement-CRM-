@@ -23,13 +23,6 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
 
-    public List<CustomerResponse> searchCustomers(String keyword) {
-        List<Customer> customers = customerRepository.searchCustomers(keyword);
-        return customers.stream()
-                .map(this::toResponse)
-                .toList();
-    }
-
     @Transactional
     public CustomerResponse createCustomer(CustomerCreateRequest request) {
         if (customerRepository.existsByEmail(request.getEmail())) {
@@ -107,5 +100,12 @@ public class CustomerService {
                 customer.getCreatedBy().getId(),
                 customer.getCreatedAt(),
                 customer.getUpdatedAt());
+    }
+
+    public List<CustomerResponse> searchCustomers(String keyword) {
+        return customerRepository.searchCustomers(keyword == null ? "" : keyword.trim())
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 }

@@ -4,34 +4,38 @@ import { formatDate } from '../utils/customerUtils'
 export default function SearchPage({ customers, query, searchInput, setSearchInput, onSearch, onOpenProfile }) {
   const quickSearches = [
     ...customers.slice(0, 3).map((customer) => customer.name).filter(Boolean),
-    'inactive',
-    'email',
+    ...customers.slice(0, 1).map((customer) => customer.phone).filter(Boolean),
+    ...customers.slice(0, 1).map((customer) => customer.email).filter(Boolean),
   ]
   const normalizedQuery = query.trim().toLowerCase()
+  const normalizedPhoneQuery = query.replace(/\D/g, '')
 
   const results = useMemo(() => {
     if (!normalizedQuery) return customers
 
     return customers.filter((customer) => {
-      const noteText = customer.notes.map((note) => note.text).join(' ')
-      const interactionText = customer.interactions.map((interaction) => `${interaction.type} ${interaction.text}`).join(' ')
-      const haystack = [
-        customer.name,
-        customer.phone,
-        customer.normalizedPhone,
-        customer.email,
-        customer.address,
-        customer.companyName,
-        customer.status,
-        customer.createdBy,
-        customer.updatedBy,
-        noteText,
-        interactionText,
-      ].join(' ').toLowerCase()
+      const name = customer.name.toLowerCase()
+      const phone = customer.phone.toLowerCase()
+      const email = customer.email.toLowerCase()
+      const normalizedPhone = customer.normalizedPhone || ''
 
-      return haystack.includes(normalizedQuery)
+      return (
+        name.includes(normalizedQuery) ||
+        phone.includes(normalizedQuery) ||
+        email.includes(normalizedQuery) ||
+        (normalizedPhoneQuery && normalizedPhone.includes(normalizedPhoneQuery))
+      )
     })
-  }, [customers, normalizedQuery])
+  }, [customers, normalizedPhoneQuery, normalizedQuery])
+
+  function getMatchedBy(customer) {
+    if (!normalizedQuery) return 'All customers'
+    if (customer.name.toLowerCase().includes(normalizedQuery)) return 'Name match'
+    if (customer.email.toLowerCase().includes(normalizedQuery)) return 'Email match'
+    if (customer.phone.toLowerCase().includes(normalizedQuery)) return 'Phone match'
+    if (normalizedPhoneQuery && customer.normalizedPhone?.includes(normalizedPhoneQuery)) return 'Phone match'
+    return 'Customer match'
+  }
 
   return (
     <section className="search-page">
@@ -40,7 +44,7 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
         <div className="search-hero-shape gold" />
         <div className="search-hero-content">
           <p className="eyebrow">CRM Search</p>
-          <h2>Find customers, notes, and interaction history</h2>
+          <h2>Find customers by name, phone number, or email</h2>
           <form
             className="search-hero-form"
             onSubmit={(event) => {
@@ -52,7 +56,7 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
             <input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Search by name, phone, email, company, notes..."
+              placeholder="Search by name, phone, or email..."
               type="search"
             />
             {searchInput && (
@@ -65,6 +69,11 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
             )}
             <button className="hero-search-button" type="submit">Search</button>
           </form>
+          <div className="search-scope" aria-label="Search fields">
+            <span>Name</span>
+            <span>Phone number</span>
+            <span>Email</span>
+          </div>
           <div className="quick-searches">
             {quickSearches.map((item) => (
               <button key={item} type="button" onClick={() => onSearch(item)}>
@@ -81,11 +90,13 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
             <p className="eyebrow">Results</p>
             <h2>{results.length} matching customer{results.length === 1 ? '' : 's'}</h2>
           </div>
-          <span>{query ? `Query: ${query}` : 'Showing all customers'}</span>
+          <span>{query ? `Query: ${query}` : 'Enter a name, phone number, or email to search'}</span>
         </div>
 
         {results.length === 0 ? (
-          <div className="empty-state">No customer matched this search.</div>
+          <div className="empty-state">
+            No matches found for "{query}". Try another customer name, phone number, or email.
+          </div>
         ) : (
           <div className="search-result-list">
             {results.map((customer) => (
@@ -99,7 +110,10 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
                       <h3>{customer.name}</h3>
                       <p>{customer.companyName || 'No company'} · {customer.status}</p>
                     </div>
-                    <span className={`status-pill ${customer.status.toLowerCase()}`}>{customer.status}</span>
+                    <div className="result-badges">
+                      <span className="match-pill">{getMatchedBy(customer)}</span>
+                      <span className={`status-pill ${customer.status.toLowerCase()}`}>{customer.status}</span>
+                    </div>
                   </div>
                   <div className="result-meta-grid">
                     <span>Phone<strong>{customer.phone || '-'}</strong></span>

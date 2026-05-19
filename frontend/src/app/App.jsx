@@ -16,6 +16,27 @@ import { emptyForm } from '../data/customers'
 import { formatDate, normalizePhone } from '../utils/customerUtils'
 import './App.css'
 
+function mapCustomerFromApi(customer) {
+  return {
+    id: customer.id,
+    name: customer.fullName,
+    phone: customer.phone || '',
+    normalizedPhone: normalizePhone(customer.phone || ''),
+    email: customer.email || '',
+    address: customer.address || '',
+    companyName: customer.company || '',
+    status: customer.isActive ? 'Active' : 'Inactive',
+    createdAt: customer.createdAt,
+    createdBy: customer.createdById ? `User #${customer.createdById}` : '-',
+    updatedAt: customer.updatedAt,
+    updatedBy: '-',
+    deactivatedAt: customer.isActive ? '' : customer.updatedAt,
+    deactivatedBy: customer.isActive ? '' : '-',
+    notes: [],
+    interactions: [],
+  }
+}
+
 function App() {
   const [sessionUser, setSessionUser] = useState(null)
   const [customers, setCustomers] = useState([])
@@ -141,7 +162,7 @@ function App() {
 
   function updateForm(field, value) {
     setForm((current) => ({ ...current, [field]: value }))
-    setErrors((current) => ({ ...current, [field]: '' }))
+    setErrors((current) => ({ ...current, [field]: '', contact: '' }))
     setDuplicateMatch(null)
     setAllowDuplicate(false)
   }
@@ -369,6 +390,15 @@ function App() {
     setSelectedId(customerId)
     navigate(`/customers/${customerId}`)
     cancelEditCustomer()
+  }
+
+  function logout() {
+    setSessionUser(null)
+    setCustomers([])
+    setSelectedId(null)
+    setSearchInput('')
+    setSearchQuery('')
+    setActivePage('Customers')
   }
 
   if (!sessionUser) {
