@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import AppLayout from '../components/AppLayout'
+import DashboardPage from '../pages/DashboardPage'
 import CustomersPage from '../pages/CustomersPage'
 import CustomerProfilePage from '../pages/CustomerProfilePage'
 import LoginPage from '../pages/LoginPage'
 import SearchPage from '../pages/SearchPage'
+import UserManagementPage from '../pages/UserManagementPage'
 import {
   createCustomer,
   deactivateCustomer as deactivateCustomerRequest,
@@ -69,10 +71,14 @@ function App() {
     : { id: null, name: '', role: '' }
 
   const activePage = useMemo(() => {
+    if (location.pathname.startsWith('/dashboard')) return 'Dashboard'
     if (location.pathname.startsWith('/search')) return 'Search'
+    if (location.pathname.startsWith('/users')) return 'User Management'
     if (location.pathname.startsWith('/customers/') && location.pathname !== '/customers') return 'Profile'
     return 'Customers'
   }, [location.pathname])
+
+  const isAdmin = String(activeUser.role || '').toUpperCase() === 'ADMIN'
 
   const visibleCustomers = useMemo(() => {
     return customers
@@ -130,7 +136,7 @@ function App() {
 
   function handleLogin(user) {
     setSessionUser(user)
-    navigate('/customers', { replace: true })
+    navigate('/dashboard', { replace: true })
   }
 
   function handleLogout() {
@@ -351,12 +357,16 @@ function App() {
   }
 
   function navigateTo(item) {
-    if (item === 'Customers') {
+    if (item === 'Dashboard') {
+      navigate('/dashboard')
+    } else if (item === 'Customers') {
       navigate('/customers')
     } else if (item === 'Search') {
       navigate('/search')
     } else if (item === 'Profile') {
       navigate(selectedId ? `/customers/${selectedId}` : '/customers')
+    } else if (item === 'User Management' && isAdmin) {
+      navigate('/users')
     }
     cancelEditCustomer()
   }
@@ -390,8 +400,16 @@ function App() {
       )}
 
       <Routes>
-        <Route path="/" element={<Navigate to="/customers" replace />} />
-        <Route path="/login" element={<Navigate to="/customers" replace />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/dashboard"
+          element={(
+            <DashboardPage
+              onOpenProfile={openProfile}
+            />
+          )}
+        />
         <Route
           path="/customers"
           element={(
@@ -468,7 +486,11 @@ function App() {
             />
           )}
         />
-        <Route path="*" element={<Navigate to="/customers" replace />} />
+        <Route
+          path="/users"
+          element={isAdmin ? <UserManagementPage currentUser={activeUser} /> : <Navigate to="/dashboard" replace />}
+        />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AppLayout>
   )

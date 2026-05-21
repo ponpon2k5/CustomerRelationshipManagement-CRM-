@@ -59,7 +59,7 @@ public class User {
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();
         if (role == null) {
-            role = UserRole.STAFF;
+            role = UserRole.MANAGER;
         }
         if (isActive == null) {
             isActive = true;

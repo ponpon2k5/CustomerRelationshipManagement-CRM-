@@ -14,6 +14,10 @@ export default function AppLayout({
     ? sessionUser
     : sessionUser?.fullName || sessionUser?.email || 'user'
   const role = typeof sessionUser === 'string' ? '' : sessionUser?.role
+  const normalizedRole = String(role || '').toUpperCase()
+  const visibleNavItems = normalizedRole === 'ADMIN'
+    ? [...navItems, 'User Management']
+    : navItems
 
   return (
     <main className="crm-shell">
@@ -23,7 +27,7 @@ export default function AppLayout({
           <span>Bigin</span>
         </div>
         <nav className="nav-list">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <button
               className={`nav-item ${item === activePage ? 'active' : ''}`}
               key={item}
@@ -45,7 +49,9 @@ export default function AppLayout({
                 ? 'Customer Profile'
                 : activePage === 'Search'
                   ? 'Search Customers'
-                  : 'Customer Dashboard'}
+                  : activePage === 'User Management'
+                    ? 'User Management'
+                    : 'Dashboard Report'}
             </h1>
           </div>
           <form

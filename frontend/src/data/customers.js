@@ -1,4 +1,4 @@
-export const navItems = ['Customers', 'Search', 'Profile']
+export const navItems = ['Dashboard', 'Customers', 'Profile', 'Search']
 
 export const emptyForm = {
   name: '',

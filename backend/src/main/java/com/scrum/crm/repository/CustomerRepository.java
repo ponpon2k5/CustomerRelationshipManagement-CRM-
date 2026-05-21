@@ -13,6 +13,13 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     boolean existsByEmailAndIdNot(String email, Long id);
 
     @Query("""
+            SELECT c.isActive, COUNT(c)
+            FROM Customer c
+            GROUP BY c.isActive
+            """)
+    List<Object[]> countByActiveStatus();
+
+    @Query("""
             SELECT c FROM Customer c
             WHERE
                 LOWER(c.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))

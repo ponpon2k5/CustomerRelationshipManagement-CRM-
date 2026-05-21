@@ -29,7 +29,7 @@ export default function CustomerProfilePage({
 
   const isInactive = selectedCustomer?.status === 'Inactive'
   const userRole = String(user?.role || '').toUpperCase()
-  const canDeactivate = userRole === 'MANAGER'
+  const canDeactivate = userRole === 'MANAGER' || userRole === 'ADMIN'
 
   if (!selectedCustomer) {
     return (
