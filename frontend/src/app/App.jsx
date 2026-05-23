@@ -38,6 +38,23 @@ function mapCustomerFromApi(customer) {
   }
 }
 
+const defaultCustomerFilters = {
+  status: 'all',
+  companyName: '',
+  createdDate: '',
+}
+
+function toDateInputValue(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function App() {
   const [sessionUser, setSessionUser] = useState(null)
   const [customers, setCustomers] = useState([])
@@ -45,7 +62,7 @@ function App() {
   const [selectedId, setSelectedId] = useState(null)
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
-  const [showInactive, setShowInactive] = useState(false)
+  const [customerFilters, setCustomerFilters] = useState(defaultCustomerFilters)
   const [sort, setSort] = useState({ key: 'createdAt', direction: 'desc' })
   const [page, setPage] = useState(1)
   const [errors, setErrors] = useState({})
@@ -81,15 +98,26 @@ function App() {
   const isAdmin = String(activeUser.role || '').toUpperCase() === 'ADMIN'
 
   const visibleCustomers = useMemo(() => {
+    const normalizedCompanyFilter = customerFilters.companyName.trim().toLowerCase()
+
     return customers
-      .filter((customer) => showInactive || customer.status === 'Active')
+      .filter((customer) => {
+        const matchesStatus = customerFilters.status === 'all'
+          || customer.status.toLowerCase() === customerFilters.status
+        const matchesCompany = !normalizedCompanyFilter
+          || (customer.companyName || '').toLowerCase().includes(normalizedCompanyFilter)
+        const matchesCreatedDate = !customerFilters.createdDate
+          || toDateInputValue(customer.createdAt) === customerFilters.createdDate
+
+        return matchesStatus && matchesCompany && matchesCreatedDate
+      })
       .sort((a, b) => {
         const left = sort.key === 'name' ? (a.name || '').toLowerCase() : (a.createdAt || '')
         const right = sort.key === 'name' ? (b.name || '').toLowerCase() : (b.createdAt || '')
         const result = left.localeCompare(right)
         return sort.direction === 'asc' ? result : -result
       })
-  }, [customers, showInactive, sort])
+  }, [customerFilters, customers, sort])
 
   const pageSize = 20
   const totalPages = Math.max(1, Math.ceil(visibleCustomers.length / pageSize))
@@ -125,6 +153,10 @@ function App() {
   }, [sessionUser])
 
   useEffect(() => {
+    setPage((currentPage) => Math.min(currentPage, totalPages))
+  }, [totalPages])
+
+  useEffect(() => {
     const match = location.pathname.match(/^\/customers\/(\d+)/)
     if (!match) return
 
@@ -145,7 +177,18 @@ function App() {
     setSelectedId(null)
     setSearchInput('')
     setSearchQuery('')
+    setCustomerFilters(defaultCustomerFilters)
     navigate('/login', { replace: true })
+  }
+
+  function updateCustomerFilter(field, value) {
+    setCustomerFilters((current) => ({ ...current, [field]: value }))
+    setPage(1)
+  }
+
+  function resetCustomerFilters() {
+    setCustomerFilters(defaultCustomerFilters)
+    setPage(1)
   }
 
   function updateForm(field, value) {
@@ -421,19 +464,19 @@ function App() {
               errors={errors}
               form={form}
               inactiveCount={inactiveCount}
+              totalCustomers={customers.length}
+              customerFilters={customerFilters}
               onActivate={activateCustomer}
               onChangeSort={changeSort}
               onCloseCreate={closeCreateModal}
+              onFilterChange={updateCustomerFilter}
               onOpenCreate={openCreateModal}
               onOpenProfile={openProfile}
+              onResetFilters={resetCustomerFilters}
               onSaveCustomer={handleSaveCustomer}
               onSelectCustomer={(customerId) => {
                 setSelectedId(customerId)
                 cancelEditCustomer()
-              }}
-              onShowInactiveChange={(checked) => {
-                setShowInactive(checked)
-                setPage(1)
               }}
               onToggleDuplicate={setAllowDuplicate}
               onUpdateForm={updateForm}
@@ -442,7 +485,6 @@ function App() {
               selectedCustomer={selectedCustomer}
               setPage={setPage}
               showCreateModal={showCreateModal}
-              showInactive={showInactive}
               totalPages={totalPages}
               visibleCustomers={visibleCustomers}
             />

@@ -4,19 +4,22 @@ import CreateCustomerModal from '../components/CreateCustomerModal'
 export default function CustomersPage({
   activeCount,
   allowDuplicate,
+  customerFilters,
   createdToday,
   duplicateMatch,
   errors,
   form,
   inactiveCount,
+  totalCustomers,
   onActivate,
   onChangeSort,
   onCloseCreate,
+  onFilterChange,
   onOpenCreate,
   onOpenProfile,
+  onResetFilters,
   onSaveCustomer,
   onSelectCustomer,
-  onShowInactiveChange,
   onToggleDuplicate,
   onUpdateForm,
   page,
@@ -24,7 +27,6 @@ export default function CustomersPage({
   selectedCustomer,
   setPage,
   showCreateModal,
-  showInactive,
   totalPages,
   visibleCustomers,
 }) {
@@ -44,8 +46,8 @@ export default function CustomersPage({
           <strong>{createdToday}</strong>
         </article>
         <article>
-          <span>Default Page Size</span>
-          <strong>20</strong>
+          <span>Total Customers</span>
+          <strong>{totalCustomers}</strong>
         </article>
       </section>
 
@@ -60,15 +62,39 @@ export default function CustomersPage({
               <button className="primary-button" type="button" onClick={onOpenCreate}>
                 Create Customer
               </button>
-              <label className="toggle-line">
-                <input
-                  checked={showInactive}
-                  type="checkbox"
-                  onChange={(event) => onShowInactiveChange(event.target.checked)}
-                />
-                Show inactive
-              </label>
             </div>
+          </div>
+          <div className="customer-filters" aria-label="Customer filters">
+            <label>
+              Status
+              <select
+                value={customerFilters.status}
+                onChange={(event) => onFilterChange('status', event.target.value)}
+              >
+                <option value="all">All</option>
+                <option value="active">Active</option>
+                <option value="inactive">Deactivated</option>
+              </select>
+            </label>
+            <label>
+              Company name
+              <input
+                placeholder="Filter by company"
+                value={customerFilters.companyName}
+                onChange={(event) => onFilterChange('companyName', event.target.value)}
+              />
+            </label>
+            <label>
+              Created date
+              <input
+                type="date"
+                value={customerFilters.createdDate}
+                onChange={(event) => onFilterChange('createdDate', event.target.value)}
+              />
+            </label>
+            <button className="secondary-button" type="button" onClick={onResetFilters}>
+              Reset Filters
+            </button>
           </div>
 
           {visibleCustomers.length === 0 ? (
