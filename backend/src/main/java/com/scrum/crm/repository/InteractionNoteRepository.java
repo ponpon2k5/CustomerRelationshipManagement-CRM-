@@ -16,9 +16,18 @@ public interface InteractionNoteRepository extends JpaRepository<InteractionNote
     @Query("""
             SELECT n FROM InteractionNote n
             JOIN FETCH n.customer
+            JOIN FETCH n.createdBy
             ORDER BY n.interactionTime DESC
             """)
     List<InteractionNote> findRecentActivities(Pageable pageable);
+
+    @Query("""
+            SELECT n FROM InteractionNote n
+            JOIN FETCH n.customer
+            JOIN FETCH n.createdBy
+            ORDER BY n.interactionTime DESC
+            """)
+    List<InteractionNote> findIssues(Pageable pageable);
 
     @Query("""
             SELECT n.interactionType, COUNT(n)

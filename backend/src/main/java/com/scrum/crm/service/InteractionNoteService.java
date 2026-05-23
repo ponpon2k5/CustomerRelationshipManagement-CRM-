@@ -1,6 +1,7 @@
 package com.scrum.crm.service;
 
 import com.scrum.crm.dto.interaction.InteractionNoteCreateRequest;
+import com.scrum.crm.dto.interaction.InteractionIssueResponse;
 import com.scrum.crm.dto.interaction.InteractionNoteResponse;
 import com.scrum.crm.dto.interaction.InteractionNoteUpdateRequest;
 import com.scrum.crm.entity.Customer;
@@ -14,6 +15,7 @@ import com.scrum.crm.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +42,10 @@ public class InteractionNoteService {
         note.setInteractionType(request.getInteractionType());
         note.setInteractionTime(
                 request.getInteractionTime() != null ? request.getInteractionTime() : LocalDateTime.now());
-        note.setNoteContent(request.getNoteContent());
+        note.setTitle(request.getTitle().trim());
+        note.setDescription(request.getDescription().trim());
+        note.setPriority(request.getPriority());
+        note.setStatus(request.getStatus());
 
         return InteractionNoteMapper.toResponse(interactionNoteRepository.save(note));
     }
@@ -56,12 +61,40 @@ public class InteractionNoteService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<InteractionIssueResponse> listIssues(int limit) {
+        int sanitizedLimit = Math.min(Math.max(limit, 1), 1000);
+        return interactionNoteRepository.findIssues(PageRequest.of(0, sanitizedLimit)).stream()
+                .map(note -> new InteractionIssueResponse(
+                        note.getId(),
+                        note.getTitle(),
+                        note.getDescription(),
+                        note.getInteractionType(),
+                        note.getInteractionTime(),
+                        note.getPriority(),
+                        note.getStatus(),
+                        note.getCustomer().getId(),
+                        note.getCustomer().getFullName(),
+                        note.getCustomer().getEmail(),
+                        note.getCustomer().getPhone(),
+                        note.getCustomer().getCompany(),
+                        note.getCreatedBy().getId(),
+                        note.getCreatedBy().getFullName()
+                ))
+                .toList();
+    }
+
     @Transactional
     public InteractionNoteResponse update(Long id, InteractionNoteUpdateRequest request) {
         InteractionNote note = interactionNoteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Interaction note not found with id: " + id));
 
-        note.setNoteContent(request.getNoteContent());
+        note.setInteractionType(request.getInteractionType());
+        note.setInteractionTime(request.getInteractionTime());
+        note.setTitle(request.getTitle().trim());
+        note.setDescription(request.getDescription().trim());
+        note.setPriority(request.getPriority());
+        note.setStatus(request.getStatus());
         return InteractionNoteMapper.toResponse(interactionNoteRepository.save(note));
     }
 }

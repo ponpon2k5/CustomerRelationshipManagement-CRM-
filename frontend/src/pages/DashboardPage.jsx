@@ -161,7 +161,8 @@ export default function DashboardPage({ onOpenProfile }) {
                   </div>
                   <p>
                     <b>{typeLabels[activity.interactionType] || activity.interactionType}:</b>{' '}
-                    {activity.noteContent}
+                    {activity.title}
+                    {activity.description ? ` - ${activity.description}` : ''}
                   </p>
                   <button type="button" className="text-button" onClick={() => onOpenProfile(activity.customerId)}>
                     Open customer profile

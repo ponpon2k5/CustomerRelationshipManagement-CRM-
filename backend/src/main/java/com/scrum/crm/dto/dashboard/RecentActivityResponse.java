@@ -10,6 +10,7 @@ public record RecentActivityResponse(
         String companyName,
         InteractionType interactionType,
         LocalDateTime interactionTime,
-        String noteContent
+        String title,
+        String description
 ) {
 }

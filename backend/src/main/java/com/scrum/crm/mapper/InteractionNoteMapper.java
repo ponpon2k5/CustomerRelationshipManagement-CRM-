@@ -15,7 +15,10 @@ public final class InteractionNoteMapper {
                 note.getCreatedBy().getId(),
                 note.getInteractionType(),
                 note.getInteractionTime(),
-                note.getNoteContent(),
+                note.getTitle(),
+                note.getDescription(),
+                note.getPriority(),
+                note.getStatus(),
                 note.getCreatedAt(),
                 note.getUpdatedAt()
         );

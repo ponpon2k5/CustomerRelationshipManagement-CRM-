@@ -5,17 +5,21 @@ import com.scrum.crm.entity.InteractionStatus;
 import com.scrum.crm.entity.InteractionType;
 import java.time.LocalDateTime;
 
-public record InteractionNoteResponse(
+public record InteractionIssueResponse(
         Long id,
-        Long customerId,
-        Long createdById,
-        InteractionType interactionType,
-        LocalDateTime interactionTime,
         String title,
         String description,
+        InteractionType interactionType,
+        LocalDateTime interactionTime,
         InteractionPriority priority,
         InteractionStatus status,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Long customerId,
+        String customerName,
+        String customerEmail,
+        String customerPhone,
+        String customerCompany,
+        Long createdById,
+        String createdByName
 ) {
 }
+

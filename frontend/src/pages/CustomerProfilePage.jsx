@@ -48,6 +48,9 @@ export default function CustomerProfilePage({
             <h2 id="detail-title">{selectedCustomer.name}</h2>
           </div>
           <div className="detail-actions">
+            <button className="secondary-button" type="button">
+              Summary
+            </button>
             <button className="secondary-button" type="button" onClick={onBackToList}>
               Back to List
             </button>

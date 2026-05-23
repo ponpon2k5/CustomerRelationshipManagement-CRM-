@@ -4,6 +4,7 @@ import AppLayout from '../components/AppLayout'
 import DashboardPage from '../pages/DashboardPage'
 import CustomersPage from '../pages/CustomersPage'
 import CustomerProfilePage from '../pages/CustomerProfilePage'
+import IssuesPage from '../pages/IssuesPage'
 import LoginPage from '../pages/LoginPage'
 import SearchPage from '../pages/SearchPage'
 import UserManagementPage from '../pages/UserManagementPage'
@@ -89,6 +90,7 @@ function App() {
 
   const activePage = useMemo(() => {
     if (location.pathname.startsWith('/dashboard')) return 'Dashboard'
+    if (location.pathname.startsWith('/issues')) return 'Issues'
     if (location.pathname.startsWith('/search')) return 'Search'
     if (location.pathname.startsWith('/users')) return 'User Management'
     if (location.pathname.startsWith('/customers/') && location.pathname !== '/customers') return 'Profile'
@@ -404,6 +406,8 @@ function App() {
       navigate('/dashboard')
     } else if (item === 'Customers') {
       navigate('/customers')
+    } else if (item === 'Issues') {
+      navigate('/issues')
     } else if (item === 'Search') {
       navigate('/search')
     } else if (item === 'Profile') {
@@ -512,6 +516,14 @@ function App() {
               onUpdateForm={updateEditForm}
               selectedCustomer={selectedCustomer}
               user={activeUser}
+            />
+          )}
+        />
+        <Route
+          path="/issues"
+          element={(
+            <IssuesPage
+              onOpenProfile={openProfile}
             />
           )}
         />

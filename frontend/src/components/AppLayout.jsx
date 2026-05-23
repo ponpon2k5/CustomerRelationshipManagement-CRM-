@@ -49,9 +49,13 @@ export default function AppLayout({
                 ? 'Customer Profile'
                 : activePage === 'Search'
                   ? 'Search Customers'
-                  : activePage === 'User Management'
-                    ? 'User Management'
-                    : 'Dashboard Report'}
+                  : activePage === 'Issues'
+                    ? 'Interaction Issues'
+                    : activePage === 'User Management'
+                      ? 'User Management'
+                      : activePage === 'Customers'
+                        ? 'Customer List'
+                        : 'Dashboard Report'}
             </h1>
           </div>
           <form

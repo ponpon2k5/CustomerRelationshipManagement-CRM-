@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Convert;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -52,8 +53,19 @@ public class InteractionNote {
     @Column(name = "interaction_time", nullable = false)
     private LocalDateTime interactionTime;
 
-    @Column(name = "note_content", nullable = false, columnDefinition = "text")
-    private String noteContent;
+    @Column(name = "title", nullable = false, length = 255)
+    private String title;
+
+    @Column(name = "description", nullable = false, columnDefinition = "text")
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "priority", nullable = false, length = 20)
+    private InteractionPriority priority;
+
+    @Convert(converter = InteractionStatusConverter.class)
+    @Column(name = "status", columnDefinition = "text")
+    private InteractionStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -66,6 +78,12 @@ public class InteractionNote {
         LocalDateTime now = LocalDateTime.now();
         if (interactionType == null) {
             interactionType = InteractionType.OTHER;
+        }
+        if (priority == null) {
+            priority = InteractionPriority.MEDIUM;
+        }
+        if (status == null) {
+            status = InteractionStatus.NEUTRAL;
         }
         if (createdAt == null) {
             createdAt = now;

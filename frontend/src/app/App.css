@@ -1018,6 +1018,64 @@ td strong {
   margin-left: 8px;
 }
 
+.issues-panel {
+  margin: 0 28px;
+}
+
+.issues-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 220px)) auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e4eaf0;
+  background: #fbfcfd;
+}
+
+.issues-filters label {
+  display: grid;
+  gap: 6px;
+  color: #4d5968;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.issues-filters select,
+.issues-filters input {
+  min-height: 38px;
+  border: 1px solid #d6dfe8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  color: #202733;
+  font: inherit;
+  font-size: 14px;
+}
+
+.issues-filters button {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.issue-description {
+  margin-top: 6px;
+  color: #4d5968;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.issue-customer-info {
+  display: grid;
+  gap: 4px;
+}
+
+.issue-customer-info span {
+  color: #6a7584;
+  font-size: 13px;
+}
+
 .activate-action {
   border-color: #b2ebe7;
   background: #e8faf9;
@@ -1640,7 +1698,7 @@ td strong {
 
 .interaction-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1687,6 +1745,99 @@ td strong {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.interaction-item-head-top {
+  align-items: flex-start;
+}
+
+.interaction-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 8px;
+}
+
+.interaction-meta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid #d6dfe8;
+  background: #f7f9fb;
+  color: #4d5968;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.priority-tag,
+.emotion-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.priority-highest {
+  background: #ffe6e6;
+  color: #a62b2b;
+}
+
+.priority-high {
+  background: #fff0d8;
+  color: #945b18;
+}
+
+.priority-medium {
+  background: #fff9d8;
+  color: #726012;
+}
+
+.priority-low {
+  background: #e9f8ea;
+  color: #1f6e34;
+}
+
+.priority-very_low {
+  background: #eef2f7;
+  color: #4f6174;
+}
+
+.emotion-satisfied {
+  background: #e8faf9;
+  color: #167d75;
+}
+
+.emotion-excited {
+  background: #f2ecff;
+  color: #5d3cb4;
+}
+
+.emotion-frustrated {
+  background: #ffe9ea;
+  color: #ab2e3d;
+}
+
+.emotion-confused {
+  background: #fff5dc;
+  color: #8b6321;
+}
+
+.emotion-neutral {
+  background: #eef2f7;
+  color: #4f6174;
+}
+
+.interaction-panel .timeline article > p {
+  margin: 0;
+  color: #202733;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .text-button {
@@ -1984,6 +2135,18 @@ td strong {
     margin: 0 14px;
   }
 
+  .issues-panel {
+    margin: 0 14px;
+  }
+
+  .issues-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .issues-filters button {
+    justify-self: start;
+  }
+
   .profile-history-grid {
     grid-template-columns: 1fr;
     margin: 0 14px;
@@ -2036,6 +2199,10 @@ td strong {
 
   .customer-filters button {
     justify-self: start;
+  }
+
+  .interaction-form-grid {
+    grid-template-columns: 1fr;
   }
 }
 

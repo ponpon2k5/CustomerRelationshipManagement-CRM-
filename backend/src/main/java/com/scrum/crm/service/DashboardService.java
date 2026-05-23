@@ -100,7 +100,8 @@ public class DashboardService {
                 note.getCustomer().getCompany(),
                 note.getInteractionType(),
                 note.getInteractionTime(),
-                note.getNoteContent()
+                note.getTitle(),
+                note.getDescription()
         );
     }
 }
