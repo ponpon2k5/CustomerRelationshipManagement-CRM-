@@ -1,5 +1,6 @@
 package com.scrum.crm.dto.customer;
 
+import com.scrum.crm.entity.CustomerStage;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,4 +35,6 @@ public class CustomerUpdateRequest {
 
     @NotNull
     private Boolean isActive;
+
+    private CustomerStage customerStage;
 }

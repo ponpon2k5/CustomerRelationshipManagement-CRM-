@@ -1,5 +1,6 @@
 package com.scrum.crm.dto.customer;
 
+import com.scrum.crm.entity.CustomerStage;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -33,6 +34,8 @@ public class CustomerCreateRequest {
     private String address;
 
     private Boolean isActive;
+
+    private CustomerStage customerStage;
 
     @NotNull
     private Long createdById;

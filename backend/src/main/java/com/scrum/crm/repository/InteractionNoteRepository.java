@@ -11,6 +11,8 @@ public interface InteractionNoteRepository extends JpaRepository<InteractionNote
 
     List<InteractionNote> findByCustomer_IdOrderByInteractionTimeDesc(Long customerId);
 
+    List<InteractionNote> findByCustomer_IdAndCreatedBy_IdOrderByInteractionTimeDesc(Long customerId, Long createdById);
+
     long countByInteractionTimeGreaterThanEqual(LocalDateTime interactionTime);
 
     @Query("""

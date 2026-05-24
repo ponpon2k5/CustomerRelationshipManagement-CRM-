@@ -1,5 +1,6 @@
 package com.scrum.crm.dto.customer;
 
+import com.scrum.crm.entity.CustomerStage;
 import java.time.LocalDateTime;
 
 public record CustomerResponse(
@@ -10,6 +11,7 @@ public record CustomerResponse(
         String company,
         String address,
         Boolean isActive,
+        CustomerStage customerStage,
         Long createdById,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

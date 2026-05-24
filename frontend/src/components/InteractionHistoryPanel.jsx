@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  batchProcessInteractionSummaries,
   createInteraction,
   fetchInteractions,
-  updateInteraction,
 } from '../services/api/interactionApi'
 import { formatDateTime } from '../utils/customerUtils'
 import {
@@ -45,25 +45,23 @@ function emptyForm() {
   }
 }
 
-function createEditState(item) {
-  return {
-    interactionType: item.interactionType,
-    interactionTime: toDatetimeLocalValue(new Date(item.date)),
-    title: item.title || '',
-    description: item.text || '',
-    priority: item.priority || 'MEDIUM',
-    emotionStatus: item.emotionStatus || 'NEUTRAL',
-  }
-}
-
-export default function InteractionHistoryPanel({ customerId, createdById, disabled = false, disabledReason = '', onNotesChange }) {
+export default function InteractionHistoryPanel({
+  customerId,
+  createdById,
+  disabled = false,
+  disabledReason = '',
+  onNotesChange,
+  selectedNoteIds = [],
+  selectedNotes = [],
+  onClearSelectedNotes,
+}) {
   const [interactions, setInteractions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [editForm, setEditForm] = useState(emptyForm)
+  const [batchSubmitting, setBatchSubmitting] = useState(false)
+  const [batchMessage, setBatchMessage] = useState('')
 
   const loadInteractions = useCallback(async () => {
     if (!customerId) return
@@ -72,7 +70,7 @@ export default function InteractionHistoryPanel({ customerId, createdById, disab
     setError('')
 
     try {
-      const data = await fetchInteractions(customerId)
+      const data = await fetchInteractions(customerId, createdById)
       setInteractions(data)
       onNotesChange?.(data)
     } catch (err) {
@@ -82,11 +80,29 @@ export default function InteractionHistoryPanel({ customerId, createdById, disab
     } finally {
       setLoading(false)
     }
-  }, [customerId, onNotesChange])
+  }, [createdById, customerId, onNotesChange])
 
   useEffect(() => {
     loadInteractions()
   }, [loadInteractions])
+
+  useEffect(() => {
+    setBatchMessage('')
+  }, [customerId])
+
+  useEffect(() => {
+    const hasActiveSummary = interactions.some((item) => {
+      const status = String(item.summaryStatus || 'PENDING').toUpperCase()
+      return status === 'PENDING' || status === 'PROCESSING'
+    })
+    if (!hasActiveSummary) return undefined
+
+    const timerId = window.setInterval(() => {
+      loadInteractions()
+    }, 5000)
+
+    return () => window.clearInterval(timerId)
+  }, [interactions, loadInteractions])
 
   async function handleCreate(event) {
     event.preventDefault()
@@ -115,33 +131,60 @@ export default function InteractionHistoryPanel({ customerId, createdById, disab
     }
   }
 
-  async function handleUpdate(id) {
-    if (disabled) return
-    if (!editForm.title.trim() || !editForm.description.trim()) return
-
-    setSaving(true)
+  async function handleBatchProcess(action) {
+    if (disabled || batchSubmitting || selectedNoteIds.length === 0) return
+    setBatchSubmitting(true)
     setError('')
+    setBatchMessage('')
+
+    const selectedSnapshot = [...selectedNoteIds]
 
     try {
-      await updateInteraction(id, {
-        interactionType: editForm.interactionType,
-        interactionTime: toApiDateTime(editForm.interactionTime),
-        title: editForm.title.trim(),
-        description: editForm.description.trim(),
-        priority: editForm.priority,
-        status: editForm.emotionStatus,
-      })
-      setEditingId(null)
-      setEditForm(emptyForm())
+      const response = await batchProcessInteractionSummaries(selectedSnapshot, action)
+      const accepted = Number(response?.accepted || 0)
+      const skipped = Number(response?.skipped || 0)
+      setBatchMessage(`Queued ${accepted} note(s). Skipped ${skipped}.`)
       await loadInteractions()
+      onClearSelectedNotes?.()
     } catch (err) {
-      setError(err.message || 'Failed to update interaction.')
+      setError(err.message || 'Failed to process selected notes.')
     } finally {
-      setSaving(false)
+      setBatchSubmitting(false)
     }
   }
 
-  const timelineItems = interactions.map(toTimelineItem).sort((a, b) => b.date.localeCompare(a.date))
+  const timelineItems = useMemo(
+    () => interactions.map(toTimelineItem).sort((a, b) => b.date.localeCompare(a.date)),
+    [interactions],
+  )
+  const selectedCount = selectedNoteIds.length
+
+  const selectedNoteById = useMemo(() => {
+    const map = new Map()
+    selectedNotes.forEach((note) => map.set(note.id, note))
+    return map
+  }, [selectedNotes])
+
+  const interactionById = useMemo(() => {
+    const map = new Map()
+    timelineItems.forEach((item) => map.set(item.id, item))
+    return map
+  }, [timelineItems])
+
+  const displayedNotes = useMemo(
+    () => selectedNoteIds
+      .map((id) => {
+        const note = selectedNoteById.get(id)
+        if (!note) return null
+        return {
+          ...note,
+          interaction: interactionById.get(id) || null,
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.date.localeCompare(a.date)),
+    [selectedNoteIds, selectedNoteById, interactionById],
+  )
 
   return (
     <div className="interaction-panel" id="interaction-history-panel">
@@ -237,131 +280,77 @@ export default function InteractionHistoryPanel({ customerId, createdById, disab
       </form>
 
       {error && <div className="interaction-error">{error}</div>}
+      {batchMessage && <div className="interaction-success">{batchMessage}</div>}
 
-      <div className="timeline">
+      <div className="summary-batch-toolbar">
+        <label className="summary-select-all">
+          <span>Selected from Notes: {selectedCount}</span>
+        </label>
+        <div className="summary-batch-actions">
+          <button
+            className="secondary-button"
+            disabled={disabled || batchSubmitting || selectedCount === 0}
+            type="button"
+            onClick={() => handleBatchProcess('generate')}
+          >
+            {batchSubmitting ? 'Processing...' : 'AI Summary Selected'}
+          </button>
+          <button
+            className="text-button"
+            disabled={disabled || batchSubmitting || selectedCount === 0}
+            type="button"
+            onClick={() => handleBatchProcess('regenerate')}
+          >
+            Regenerate Selected
+          </button>
+          <button
+            className="text-button"
+            disabled={batchSubmitting || selectedCount === 0}
+            type="button"
+            onClick={() => onClearSelectedNotes?.()}
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div className="selected-notes-panel">
+        <h4>Selected Notes</h4>
         {loading ? (
           <div className="empty-inline">Loading interactions...</div>
-        ) : timelineItems.length === 0 ? (
-          <div className="empty-inline">No interactions for this customer.</div>
+        ) : displayedNotes.length === 0 ? (
+          <div className="empty-inline">Select notes in Notes to display summaries here.</div>
         ) : (
-          timelineItems.map((item) => (
-            <article key={item.id}>
-              <div className="interaction-item-head interaction-item-head-top">
-                <strong>{item.title}</strong>
-                {editingId !== item.id && !disabled && (
-                  <button
-                    className="text-button"
-                    type="button"
-                    onClick={() => {
-                      setEditingId(item.id)
-                      setEditForm(createEditState(item))
-                    }}
-                  >
-                    Edit
-                  </button>
+          <div className="timeline">
+            {displayedNotes.map((note) => (
+              <article key={`selected-${note.id}`}>
+                <span>{formatDateTime(note.date)}</span>
+                <strong>{note.text}</strong>
+                {note.interaction && (
+                  <div className="interaction-summary-card">
+                    <div className="interaction-summary-head">
+                      <strong>AI Summary</strong>
+                      <span className={`summary-status summary-status-${String(note.interaction.summaryStatus || 'PENDING').toLowerCase()}`}>
+                        {note.interaction.summaryStatus}
+                      </span>
+                    </div>
+                    {note.interaction.latestSummary ? (
+                      <div className="interaction-summary-body">
+                        <p><strong>Summary:</strong> {note.interaction.latestSummary.conversationSummary || 'unknown'}</p>
+                        <p><strong>Customer needs:</strong> {note.interaction.latestSummary.customerNeeds || 'unknown'}</p>
+                        <p><strong>Pain points:</strong> {note.interaction.latestSummary.painPoints || 'unknown'}</p>
+                        <p><strong>Commitments:</strong> {note.interaction.latestSummary.commitments || 'unknown'}</p>
+                        <p><strong>Next steps:</strong> {note.interaction.latestSummary.nextSteps || 'unknown'}</p>
+                        <p><strong>Risk flags:</strong> {note.interaction.latestSummary.riskFlags || 'none'}</p>
+                      </div>
+                    ) : (
+                      <p className="interaction-meta">Summary is pending...</p>
+                    )}
+                  </div>
                 )}
-              </div>
-              <div className="interaction-meta-row">
-                <span className="interaction-meta">{formatDateTime(item.date)}</span>
-                <span className="interaction-meta">{item.type}</span>
-                <span className={`priority-tag priority-${item.priority.toLowerCase()}`}>{item.priorityLabel}</span>
-                <span className={`emotion-tag emotion-${item.emotionStatus.toLowerCase()}`}>{item.emotionLabel}</span>
-              </div>
-              {editingId === item.id ? (
-                <div className="interaction-edit">
-                  <div className="interaction-form-grid">
-                    <label>
-                      Title
-                      <input
-                        disabled={saving}
-                        value={editForm.title}
-                        onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      Type
-                      <select
-                        disabled={saving}
-                        value={editForm.interactionType}
-                        onChange={(event) => setEditForm((current) => ({ ...current, interactionType: event.target.value }))}
-                      >
-                        {INTERACTION_TYPES.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Date & time
-                      <input
-                        disabled={saving}
-                        type="datetime-local"
-                        value={editForm.interactionTime}
-                        onChange={(event) => setEditForm((current) => ({ ...current, interactionTime: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      Priority
-                      <select
-                        disabled={saving}
-                        value={editForm.priority}
-                        onChange={(event) => setEditForm((current) => ({ ...current, priority: event.target.value }))}
-                      >
-                        {PRIORITY_LEVELS.map((priority) => (
-                          <option key={priority.value} value={priority.value}>
-                            {priority.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Customer emotion
-                      <select
-                        disabled={saving}
-                        value={editForm.emotionStatus}
-                        onChange={(event) => setEditForm((current) => ({ ...current, emotionStatus: event.target.value }))}
-                      >
-                        {EMOTION_STATUSES.map((emotion) => (
-                          <option key={emotion.value} value={emotion.value}>
-                            {emotion.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <textarea
-                    disabled={saving}
-                    rows={3}
-                    value={editForm.description}
-                    onChange={(event) => setEditForm((current) => ({ ...current, description: event.target.value }))}
-                  />
-                  <div className="form-actions">
-                    <button
-                      className="primary-button"
-                      disabled={disabled || saving || !editForm.title.trim() || !editForm.description.trim()}
-                      type="button"
-                      onClick={() => handleUpdate(item.id)}
-                    >
-                      Save Interaction
-                    </button>
-                    <button
-                      className="secondary-button"
-                      type="button"
-                      onClick={() => {
-                        setEditingId(null)
-                        setEditForm(emptyForm())
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p>{item.text}</p>
-              )}
-            </article>
-          ))
+              </article>
+            ))}
+          </div>
         )}
       </div>
     </div>

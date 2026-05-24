@@ -4,6 +4,7 @@ import com.scrum.crm.dto.customer.CustomerCreateRequest;
 import com.scrum.crm.dto.customer.CustomerResponse;
 import com.scrum.crm.dto.customer.CustomerUpdateRequest;
 import com.scrum.crm.entity.Customer;
+import com.scrum.crm.entity.CustomerStage;
 import com.scrum.crm.entity.User;
 import com.scrum.crm.exception.ConflictException;
 import com.scrum.crm.exception.ResourceNotFoundException;
@@ -39,6 +40,7 @@ public class CustomerService {
         customer.setCompany(request.getCompany());
         customer.setAddress(request.getAddress());
         customer.setIsActive(request.getIsActive() == null ? Boolean.TRUE : request.getIsActive());
+        customer.setCustomerStage(request.getCustomerStage() == null ? CustomerStage.LEAD : request.getCustomerStage());
         customer.setCreatedBy(creator);
 
         Customer savedCustomer = customerRepository.save(customer);
@@ -73,6 +75,9 @@ public class CustomerService {
         customer.setCompany(request.getCompany());
         customer.setAddress(request.getAddress());
         customer.setIsActive(request.getIsActive());
+        if (request.getCustomerStage() != null) {
+            customer.setCustomerStage(request.getCustomerStage());
+        }
 
         Customer savedCustomer = customerRepository.save(customer);
         return toResponse(savedCustomer);
@@ -84,6 +89,7 @@ public class CustomerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id));
 
         customer.setIsActive(false);
+        customer.setCustomerStage(CustomerStage.INACTIVE);
         Customer savedCustomer = customerRepository.save(customer);
         return toResponse(savedCustomer);
     }
@@ -94,6 +100,9 @@ public class CustomerService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found: " + id));
 
         customer.setIsActive(true);
+        if (customer.getCustomerStage() == CustomerStage.INACTIVE) {
+            customer.setCustomerStage(CustomerStage.CUSTOMER);
+        }
         Customer savedCustomer = customerRepository.save(customer);
         return toResponse(savedCustomer);
     }
@@ -107,6 +116,7 @@ public class CustomerService {
                 customer.getCompany(),
                 customer.getAddress(),
                 customer.getIsActive(),
+                customer.getCustomerStage(),
                 customer.getCreatedBy().getId(),
                 customer.getCreatedAt(),
                 customer.getUpdatedAt());

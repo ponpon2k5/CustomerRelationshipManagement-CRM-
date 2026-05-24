@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import InteractionHistoryPanel from '../components/InteractionHistoryPanel'
 import Timeline from '../components/Timeline'
 import { formatDateTime } from '../utils/customerUtils'
@@ -22,10 +22,31 @@ export default function CustomerProfilePage({
   user,
 }) {
   const [apiNotes, setApiNotes] = useState([])
+  const [selectedNoteIds, setSelectedNoteIds] = useState([])
 
   const handleNotesChange = useCallback((interactions) => {
-    setApiNotes(interactions.map(toNoteItem))
+    const nextNotes = interactions.map(toNoteItem)
+    setApiNotes(nextNotes)
+    setSelectedNoteIds((current) => current.filter((id) => nextNotes.some((note) => note.id === id)))
   }, [])
+
+  const toggleNoteSelection = useCallback((noteId, checked) => {
+    setSelectedNoteIds((current) => {
+      if (checked) {
+        if (current.includes(noteId)) return current
+        return [...current, noteId]
+      }
+      return current.filter((id) => id !== noteId)
+    })
+  }, [])
+
+  const clearSelectedNotes = useCallback(() => {
+    setSelectedNoteIds([])
+  }, [])
+
+  useEffect(() => {
+    setSelectedNoteIds([])
+  }, [selectedCustomer?.id])
 
   const isInactive = selectedCustomer?.status === 'Inactive'
   const userRole = String(user?.role || '').toUpperCase()
@@ -160,6 +181,9 @@ export default function CustomerProfilePage({
             title=""
             items={apiNotes}
             emptyText="No notes for this customer."
+            selectable
+            selectedIds={selectedNoteIds}
+            onToggleSelect={toggleNoteSelection}
           />
         </div>
         <div className="panel history-panel">
@@ -169,6 +193,9 @@ export default function CustomerProfilePage({
             disabled={isInactive}
             disabledReason="This customer is inactive. Interaction logging and note editing are disabled."
             onNotesChange={handleNotesChange}
+            selectedNoteIds={selectedNoteIds}
+            selectedNotes={apiNotes.filter((note) => selectedNoteIds.includes(note.id))}
+            onClearSelectedNotes={clearSelectedNotes}
           />
         </div>
       </section>

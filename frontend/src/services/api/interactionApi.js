@@ -9,8 +9,13 @@ async function parseError(response) {
   }
 }
 
-export async function fetchInteractions(customerId) {
-  const response = await fetch(`${API_BASE}/customers/${customerId}/interactions`)
+export async function fetchInteractions(customerId, actorId) {
+  const params = new URLSearchParams()
+  if (actorId != null) {
+    params.set('actorId', String(actorId))
+  }
+  const query = params.toString()
+  const response = await fetch(`${API_BASE}/customers/${customerId}/interactions${query ? `?${query}` : ''}`)
   if (!response.ok) {
     throw new Error(await parseError(response))
   }
@@ -34,6 +39,36 @@ export async function updateInteraction(id, payload) {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+  })
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
+export async function fetchInteractionSummary(id) {
+  const response = await fetch(`${API_BASE}/interactions/${id}/summary`)
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
+export async function regenerateInteractionSummary(id) {
+  const response = await fetch(`${API_BASE}/notes/${id}/regenerate-summary`, {
+    method: 'PATCH',
+  })
+  if (!response.ok) {
+    throw new Error(await parseError(response))
+  }
+  return response.json()
+}
+
+export async function batchProcessInteractionSummaries(noteIds, action = 'generate') {
+  const response = await fetch(`${API_BASE}/notes/summaries/batch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ noteIds, action }),
   })
   if (!response.ok) {
     throw new Error(await parseError(response))

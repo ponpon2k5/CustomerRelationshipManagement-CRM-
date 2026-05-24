@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 
-const roles = ['MANAGER', 'ADMIN']
+const roles = ['STAFF', 'MANAGER', 'ADMIN']
 
 const IconEye = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -20,7 +20,7 @@ const emptyUserForm = {
   fullName: '',
   email: '',
   password: '',
-  role: 'MANAGER',
+  role: 'STAFF',
   isActive: true,
 }
 

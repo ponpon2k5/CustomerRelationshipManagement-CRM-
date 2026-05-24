@@ -4,10 +4,14 @@ import com.scrum.crm.dto.interaction.InteractionNoteCreateRequest;
 import com.scrum.crm.dto.interaction.InteractionIssueResponse;
 import com.scrum.crm.dto.interaction.InteractionNoteResponse;
 import com.scrum.crm.dto.interaction.InteractionNoteUpdateRequest;
+import com.scrum.crm.dto.interaction.InteractionSummaryResponse;
+import com.scrum.crm.entity.AiSummaryStatus;
 import com.scrum.crm.entity.Customer;
 import com.scrum.crm.entity.InteractionNote;
 import com.scrum.crm.entity.User;
+import com.scrum.crm.entity.UserRole;
 import com.scrum.crm.exception.ResourceNotFoundException;
+import com.scrum.crm.exception.UnauthorizedException;
 import com.scrum.crm.mapper.InteractionNoteMapper;
 import com.scrum.crm.repository.CustomerRepository;
 import com.scrum.crm.repository.InteractionNoteRepository;
@@ -26,6 +30,7 @@ public class InteractionNoteService {
     private final InteractionNoteRepository interactionNoteRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+    private final AiSummaryService aiSummaryService;
 
     @Transactional
     public InteractionNoteResponse create(Long customerId, InteractionNoteCreateRequest request) {
@@ -47,17 +52,27 @@ public class InteractionNoteService {
         note.setPriority(request.getPriority());
         note.setStatus(request.getStatus());
 
-        return InteractionNoteMapper.toResponse(interactionNoteRepository.save(note));
+        InteractionNote savedNote = interactionNoteRepository.save(note);
+        aiSummaryService.createAndQueueSummary(savedNote.getId());
+        return mapToResponse(savedNote);
     }
 
     @Transactional(readOnly = true)
-    public List<InteractionNoteResponse> listByCustomer(Long customerId) {
+    public List<InteractionNoteResponse> listByCustomer(Long customerId, Long actorId) {
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException("Customer not found with id: " + customerId);
         }
 
-        return interactionNoteRepository.findByCustomer_IdOrderByInteractionTimeDesc(customerId).stream()
-                .map(InteractionNoteMapper::toResponse)
+        User actor = requireActiveActor(actorId);
+        List<InteractionNote> notes;
+        if (actor.getRole() == UserRole.ADMIN) {
+            notes = interactionNoteRepository.findByCustomer_IdOrderByInteractionTimeDesc(customerId);
+        } else {
+            notes = interactionNoteRepository.findByCustomer_IdAndCreatedBy_IdOrderByInteractionTimeDesc(customerId, actor.getId());
+        }
+
+        return notes.stream()
+                .map(this::mapToResponse)
                 .toList();
     }
 
@@ -95,6 +110,25 @@ public class InteractionNoteService {
         note.setDescription(request.getDescription().trim());
         note.setPriority(request.getPriority());
         note.setStatus(request.getStatus());
-        return InteractionNoteMapper.toResponse(interactionNoteRepository.save(note));
+        InteractionNote saved = interactionNoteRepository.save(note);
+        return mapToResponse(saved);
+    }
+
+    private InteractionNoteResponse mapToResponse(InteractionNote note) {
+        InteractionSummaryResponse latestSummary = aiSummaryService.findLatestSummaryOrNull(note.getId());
+        AiSummaryStatus status = latestSummary != null ? latestSummary.status() : AiSummaryStatus.PENDING;
+        return InteractionNoteMapper.toResponse(note, status, latestSummary);
+    }
+
+    private User requireActiveActor(Long actorId) {
+        if (actorId == null) {
+            throw new UnauthorizedException("Missing actorId.");
+        }
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + actorId));
+        if (!Boolean.TRUE.equals(actor.getIsActive())) {
+            throw new UnauthorizedException("User account is inactive.");
+        }
+        return actor;
     }
 }

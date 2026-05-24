@@ -24,6 +24,7 @@ const STATUS_LABELS = {
 export function toTimelineItem(interaction) {
   const priority = String(interaction.priority || 'MEDIUM').toUpperCase()
   const status = String(interaction.status || 'NEUTRAL').toUpperCase()
+  const summaryStatus = String(interaction.summaryStatus || 'PENDING').toUpperCase()
 
   return {
     id: interaction.id,
@@ -35,13 +36,27 @@ export function toTimelineItem(interaction) {
     priorityLabel: PRIORITY_LABELS[priority] || PRIORITY_LABELS.MEDIUM,
     emotionStatus: status,
     emotionLabel: STATUS_LABELS[status] || STATUS_LABELS.NEUTRAL,
+    summaryStatus,
+    latestSummary: interaction.latestSummary || null,
     date: interaction.interactionTime,
   }
 }
 
 export function toNoteItem(interaction) {
+  const priority = String(interaction.priority || 'MEDIUM').toUpperCase()
+  const status = String(interaction.status || 'NEUTRAL').toUpperCase()
+  const interactionType = String(interaction.interactionType || 'OTHER').toUpperCase()
+
   return {
     id: interaction.id,
+    title: interaction.title || 'Interaction Note',
+    description: interaction.description || '',
+    interactionType,
+    interactionTypeLabel: TYPE_LABELS[interactionType] || interactionType,
+    priority,
+    priorityLabel: PRIORITY_LABELS[priority] || PRIORITY_LABELS.MEDIUM,
+    status,
+    statusLabel: STATUS_LABELS[status] || STATUS_LABELS.NEUTRAL,
     text: interaction.title ? `${interaction.title}: ${interaction.description}` : interaction.description,
     date: interaction.interactionTime,
   }
@@ -56,4 +71,3 @@ export function toApiDateTime(value) {
   if (!value) return null
   return value.length === 16 ? `${value}:00` : value
 }
-

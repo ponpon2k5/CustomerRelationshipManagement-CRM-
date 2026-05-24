@@ -3,7 +3,7 @@ import CreateUserModal from '../components/CreateUserModal'
 import { createUser, getUsers, updateUserRoleStatus } from '../services/userApi'
 import { formatDate } from '../utils/customerUtils'
 
-const roles = ['MANAGER', 'ADMIN']
+const roles = ['STAFF', 'MANAGER', 'ADMIN']
 const statuses = ['ACTIVE', 'INACTIVE']
 
 function userStatus(user) {

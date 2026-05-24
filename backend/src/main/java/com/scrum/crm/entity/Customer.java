@@ -2,6 +2,8 @@ package com.scrum.crm.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,7 +34,8 @@ import lombok.Setter;
                 @Index(name = "idx_customers_full_name", columnList = "full_name"),
                 @Index(name = "idx_customers_phone", columnList = "phone"),
                 @Index(name = "idx_customers_email", columnList = "email"),
-                @Index(name = "idx_customers_is_active", columnList = "is_active")
+                @Index(name = "idx_customers_is_active", columnList = "is_active"),
+                @Index(name = "idx_customers_customer_stage", columnList = "customer_stage")
         }
 )
 public class Customer {
@@ -59,6 +62,10 @@ public class Customer {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "customer_stage", nullable = false, length = 20)
+    private CustomerStage customerStage;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
@@ -74,6 +81,9 @@ public class Customer {
         LocalDateTime now = LocalDateTime.now();
         if (isActive == null) {
             isActive = true;
+        }
+        if (customerStage == null) {
+            customerStage = CustomerStage.LEAD;
         }
         if (createdAt == null) {
             createdAt = now;

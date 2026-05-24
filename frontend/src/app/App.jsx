@@ -19,6 +19,7 @@ import { formatDate, normalizePhone } from '../utils/customerUtils'
 import './App.css'
 
 function mapCustomerFromApi(customer) {
+  const customerStage = String(customer.customerStage || '').toUpperCase() || 'LEAD'
   return {
     id: customer.id,
     name: customer.fullName || '',
@@ -28,6 +29,7 @@ function mapCustomerFromApi(customer) {
     address: customer.address || '',
     companyName: customer.company || '',
     status: customer.isActive ? 'Active' : 'Inactive',
+    customerStage,
     createdAt: customer.createdAt || '',
     createdBy: customer.createdById ? `User #${customer.createdById}` : '-',
     updatedAt: customer.updatedAt || '',
