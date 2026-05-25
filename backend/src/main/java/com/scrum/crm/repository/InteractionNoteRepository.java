@@ -15,6 +15,8 @@ public interface InteractionNoteRepository extends JpaRepository<InteractionNote
 
     long countByInteractionTimeGreaterThanEqual(LocalDateTime interactionTime);
 
+    long countByCreatedAtGreaterThanEqual(LocalDateTime createdAt);
+
     @Query("""
             SELECT n FROM InteractionNote n
             JOIN FETCH n.customer

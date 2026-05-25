@@ -22,32 +22,12 @@ public class DashboardService {
 
     private static final int RECENT_DAYS = 7;
     private static final int RECENT_ACTIVITY_LIMIT = 5;
-    private static final long CACHE_TTL_MILLIS = 15_000;
 
     private final CustomerRepository customerRepository;
     private final InteractionNoteRepository interactionNoteRepository;
-    private volatile DashboardStatsResponse cachedStats;
-    private volatile long cacheExpiresAtMillis;
 
     public DashboardStatsResponse getStats() {
-        long now = System.currentTimeMillis();
-        DashboardStatsResponse snapshot = cachedStats;
-        if (snapshot != null && now < cacheExpiresAtMillis) {
-            return snapshot;
-        }
-
-        synchronized (this) {
-            snapshot = cachedStats;
-            now = System.currentTimeMillis();
-            if (snapshot != null && now < cacheExpiresAtMillis) {
-                return snapshot;
-            }
-
-            DashboardStatsResponse freshStats = buildStats();
-            cachedStats = freshStats;
-            cacheExpiresAtMillis = now + CACHE_TTL_MILLIS;
-            return freshStats;
-        }
+        return buildStats();
     }
 
     private DashboardStatsResponse buildStats() {
@@ -55,7 +35,7 @@ public class DashboardService {
         long activeCustomers = countCustomers(customerStatusRows, true);
         long inactiveCustomers = countCustomers(customerStatusRows, false);
         long totalCustomers = activeCustomers + inactiveCustomers;
-        long recentInteractionsCount = interactionNoteRepository.countByInteractionTimeGreaterThanEqual(
+        long recentInteractionsCount = interactionNoteRepository.countByCreatedAtGreaterThanEqual(
                 LocalDateTime.now().minusDays(RECENT_DAYS)
         );
 

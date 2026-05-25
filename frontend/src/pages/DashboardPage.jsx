@@ -30,7 +30,7 @@ export default function DashboardPage({ onOpenProfile }) {
       setDashboardError('')
 
       try {
-        const data = await getDashboardStats()
+        const data = await getDashboardStats({ force: true })
         if (!isMounted) return
         setStatsData(data)
       } catch (err) {
