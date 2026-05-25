@@ -476,26 +476,33 @@
 
 .brand {
   height: 64px;
+  border: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
   padding: 0 18px;
   background: #ffffff;
-  color: #17202b;
-  font-size: 24px;
-  font-weight: 700;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
-.brand-mark {
-  width: 26px;
-  height: 26px;
-  display: inline-grid;
-  place-items: center;
-  border: 2px solid #1fa374;
-  color: #1fa374;
-  font-size: 15px;
-  font-weight: 800;
-  clip-path: polygon(0 0, 100% 0, 58% 100%, 42% 100%);
+.brand:hover,
+.brand:focus-visible {
+  background: #f6fbfa;
+}
+
+.brand:focus-visible {
+  outline: 3px solid rgba(31, 163, 116, 0.32);
+  outline-offset: -3px;
+}
+
+.brand-logo {
+  display: block;
+  width: 158px;
+  max-width: 100%;
+  height: 48px;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .nav-list {
@@ -1175,7 +1182,38 @@ td strong {
   box-shadow: 0 8px 32px rgba(28, 43, 58, 0.18);
 }
 
-.search-hero-form > span {
+.search-hero-icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.search-hero-icon::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #1aab9f;
+  border-radius: 50%;
+}
+
+.search-hero-icon::after {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 14px;
+  width: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: #1aab9f;
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+
+.search-hero-form > span:not(.search-hero-icon) {
   color: #1aab9f;
   font-size: 22px;
 }
@@ -1189,6 +1227,16 @@ td strong {
   color: #1c2b3a;
   font: inherit;
   font-weight: 700;
+}
+
+.search-hero-form input[type="search"]::-webkit-search-cancel-button,
+.search-hero-form input[type="search"]::-webkit-search-decoration {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.search-hero-form input[type="search"]::-ms-clear {
+  display: none;
 }
 
 .search-scope {
@@ -2175,7 +2223,6 @@ td strong {
     grid-template-columns: 78px minmax(0, 1fr);
   }
 
-  .brand span:last-child,
   .nav-item span:last-child {
     display: none;
   }
@@ -2183,6 +2230,16 @@ td strong {
   .brand,
   .nav-item {
     justify-content: center;
+  }
+
+  .brand {
+    padding: 0 10px;
+  }
+
+  .brand-logo {
+    width: 54px;
+    height: 42px;
+    object-position: center;
   }
 
   .topbar,
@@ -2245,6 +2302,13 @@ td strong {
 
   .brand {
     height: 58px;
+    padding: 0 12px;
+    justify-content: flex-start;
+  }
+
+  .brand-logo {
+    width: 118px;
+    height: 42px;
   }
 
   .nav-list {
