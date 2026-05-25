@@ -97,7 +97,7 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
               onSearch(searchInput)
             }}
           >
-            <span aria-hidden="true">?</span>
+            <span className="search-hero-icon" aria-hidden="true" />
 
             <input
               value={searchInput}

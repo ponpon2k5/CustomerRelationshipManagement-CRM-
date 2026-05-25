@@ -1,4 +1,5 @@
 import { navItems } from '../data/customers'
+import doubleDnLogo from '../assets/images/doubledn-pvd-logo.png'
 
 export default function AppLayout({
   activePage,
@@ -22,10 +23,14 @@ export default function AppLayout({
   return (
     <main className="crm-shell">
       <aside className="sidebar" aria-label="Primary navigation">
-        <div className="brand">
-          <span className="brand-mark">V</span>
-          <span>Bigin</span>
-        </div>
+        <button
+          className="brand"
+          type="button"
+          aria-label="Go to dashboard"
+          onClick={() => onNavigate('Dashboard')}
+        >
+          <img className="brand-logo" src={doubleDnLogo} alt="DoubleDN-PVD" />
+        </button>
         <nav className="nav-list">
           {visibleNavItems.map((item) => (
             <button
