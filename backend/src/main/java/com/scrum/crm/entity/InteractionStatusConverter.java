@@ -16,4 +16,3 @@ public class InteractionStatusConverter implements AttributeConverter<Interactio
         return InteractionStatus.fromDatabase(dbData);
     }
 }
-

@@ -16,6 +16,7 @@ public record InteractionNoteResponse(
         String description,
         InteractionPriority priority,
         InteractionStatus status,
+        Boolean isDone,
         AiSummaryStatus summaryStatus,
         InteractionSummaryResponse latestSummary,
         LocalDateTime createdAt,

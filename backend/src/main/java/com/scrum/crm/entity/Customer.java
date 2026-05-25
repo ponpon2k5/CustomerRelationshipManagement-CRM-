@@ -24,24 +24,20 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(
-        name = "customers",
-        schema = "public",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uq_customers_email", columnNames = "email")
-        },
-        indexes = {
-                @Index(name = "idx_customers_full_name", columnList = "full_name"),
-                @Index(name = "idx_customers_phone", columnList = "phone"),
-                @Index(name = "idx_customers_email", columnList = "email"),
-                @Index(name = "idx_customers_is_active", columnList = "is_active"),
-                @Index(name = "idx_customers_customer_stage", columnList = "customer_stage")
-        }
-)
+@Table(name = "customers", schema = "public", uniqueConstraints = {
+        @UniqueConstraint(name = "uq_customers_email", columnNames = "email")
+}, indexes = {
+        @Index(name = "idx_customers_full_name", columnList = "full_name"),
+        @Index(name = "idx_customers_phone", columnList = "phone"),
+        @Index(name = "idx_customers_email", columnList = "email"),
+        @Index(name = "idx_customers_is_active", columnList = "is_active"),
+        @Index(name = "idx_customers_customer_stage", columnList = "customer_stage")
+})
 public class Customer {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Giá trị khóa chính id sẽ được database tự động tạo ra khi
+                                                        // thêm record mới.
     private Long id;
 
     @Column(name = "full_name", nullable = false, length = 100)
@@ -62,12 +58,15 @@ public class Customer {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING) // Khi lưu enum xuống database, lưu bằng tên của enum, không lưu bằng số thứ
+                                 // tự.
     @Column(name = "customer_stage", nullable = false, length = 20)
     private CustomerStage customerStage;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false) // mối quan hệ 1 - n
     @JoinColumn(name = "created_by", nullable = false)
+    // Trong bảng hiện tại sẽ có một cột khóa ngoại tên là created_by, dùng để liên
+    // kết tới bảng users, và cột này không được phép null.
     private User createdBy;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -76,7 +75,8 @@ public class Customer {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @PrePersist
+    @PrePersist // Method này sẽ tự động chạy ngay trước khi entity được lưu lần đầu vào
+                // database
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();
         if (isActive == null) {
@@ -93,7 +93,7 @@ public class Customer {
         }
     }
 
-    @PreUpdate
+    @PreUpdate // sẽ tự động chạy ngay trước khi entity được update xuống database
     void preUpdate() {
         updatedAt = LocalDateTime.now();
     }

@@ -67,6 +67,9 @@ public class InteractionNote {
     @Column(name = "status", columnDefinition = "text")
     private InteractionStatus status;
 
+    @Column(name = "is_done", nullable = false)
+    private Boolean isDone;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -84,6 +87,9 @@ public class InteractionNote {
         }
         if (status == null) {
             status = InteractionStatus.NEUTRAL;
+        }
+        if (isDone == null) {
+            isDone = false;
         }
         if (createdAt == null) {
             createdAt = now;

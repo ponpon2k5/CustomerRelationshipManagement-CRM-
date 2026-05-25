@@ -154,6 +154,7 @@ export default function IssuesPage({ onOpenProfile }) {
                 <th>Owner</th>
                 <th>Priority</th>
                 <th>Status</th>
+                <th>Done</th>
                 <th>Time</th>
               </tr>
             </thead>
@@ -189,6 +190,11 @@ export default function IssuesPage({ onOpenProfile }) {
                   <td>
                     <span className={`emotion-tag emotion-${String(issue.status || 'NEUTRAL').toLowerCase()}`}>
                       {toLabel(issue.status || 'NEUTRAL')}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`done-tag ${issue.isDone ? 'done' : 'open'}`}>
+                      {issue.isDone ? 'Done' : 'Not Done'}
                     </span>
                   </td>
                   <td>{formatDateTime(issue.interactionTime)}</td>

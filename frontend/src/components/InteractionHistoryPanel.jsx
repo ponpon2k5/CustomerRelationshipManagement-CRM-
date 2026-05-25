@@ -3,6 +3,7 @@ import {
   batchProcessInteractionSummaries,
   createInteraction,
   fetchInteractions,
+  updateInteraction,
 } from '../services/api/interactionApi'
 import { formatDateTime } from '../utils/customerUtils'
 import {
@@ -42,6 +43,7 @@ function emptyForm() {
     description: '',
     priority: 'MEDIUM',
     emotionStatus: 'NEUTRAL',
+    isDone: false,
   }
 }
 
@@ -62,6 +64,14 @@ export default function InteractionHistoryPanel({
   const [saving, setSaving] = useState(false)
   const [batchSubmitting, setBatchSubmitting] = useState(false)
   const [batchMessage, setBatchMessage] = useState('')
+  const [editingInteractionId, setEditingInteractionId] = useState(null)
+
+  function toLocalInputValue(value) {
+    if (!value) return toDatetimeLocalValue()
+    const date = value instanceof Date ? value : new Date(value)
+    if (Number.isNaN(date.getTime())) return toDatetimeLocalValue()
+    return toDatetimeLocalValue(date)
+  }
 
   const loadInteractions = useCallback(async () => {
     if (!customerId) return
@@ -88,7 +98,32 @@ export default function InteractionHistoryPanel({
 
   useEffect(() => {
     setBatchMessage('')
+    setEditingInteractionId(null)
+    setForm(emptyForm())
   }, [customerId])
+
+  useEffect(() => {
+    if (selectedNoteIds.length === 0) {
+      setEditingInteractionId(null)
+      setForm(emptyForm())
+      return
+    }
+
+    const selectedId = selectedNoteIds[selectedNoteIds.length - 1]
+    const selectedNote = selectedNotes.find((item) => item.id === selectedId)
+    if (!selectedNote) return
+
+    setEditingInteractionId(selectedId)
+    setForm({
+      interactionType: String(selectedNote.interactionType || 'PHONE_CALL').toUpperCase(),
+      interactionTime: toLocalInputValue(selectedNote.date),
+      title: selectedNote.title || '',
+      description: selectedNote.description || '',
+      priority: String(selectedNote.priority || 'MEDIUM').toUpperCase(),
+      emotionStatus: String(selectedNote.status || 'NEUTRAL').toUpperCase(),
+      isDone: Boolean(selectedNote.isDone),
+    })
+  }, [selectedNoteIds, selectedNotes])
 
   useEffect(() => {
     const hasActiveSummary = interactions.some((item) => {
@@ -113,19 +148,28 @@ export default function InteractionHistoryPanel({
     setError('')
 
     try {
-      await createInteraction(customerId, {
+      const basePayload = {
         interactionType: form.interactionType,
         interactionTime: toApiDateTime(form.interactionTime),
         title: form.title.trim(),
         description: form.description.trim(),
         priority: form.priority,
         status: form.emotionStatus,
-        createdById,
-      })
+        isDone: form.isDone,
+      }
+
+      if (editingInteractionId != null) {
+        await updateInteraction(editingInteractionId, basePayload)
+      } else {
+        const payload = { ...basePayload, createdById }
+        await createInteraction(customerId, payload)
+      }
+
       setForm(emptyForm())
+      setEditingInteractionId(null)
       await loadInteractions()
     } catch (err) {
-      setError(err.message || 'Failed to create interaction.')
+      setError(err.message || 'Failed to save interaction.')
     } finally {
       setSaving(false)
     }
@@ -192,6 +236,9 @@ export default function InteractionHistoryPanel({
         <div>
           <h3>Interaction History</h3>
           <p>Track each customer touchpoint with title, time, type, description, priority, and customer emotion.</p>
+          {editingInteractionId != null && (
+            <p className="interaction-meta">Editing selected note #{editingInteractionId}.</p>
+          )}
         </div>
       </div>
 
@@ -263,6 +310,15 @@ export default function InteractionHistoryPanel({
               ))}
             </select>
           </label>
+          <label className="interaction-checkbox">
+            <input
+              checked={form.isDone}
+              disabled={disabled || saving}
+              type="checkbox"
+              onChange={(event) => setForm((current) => ({ ...current, isDone: event.target.checked }))}
+            />
+            Mark note as done
+          </label>
         </div>
         <label>
           Description
@@ -275,7 +331,7 @@ export default function InteractionHistoryPanel({
           />
         </label>
         <button className="primary-button" disabled={disabled || saving || !form.title.trim() || !form.description.trim()} type="submit">
-          {saving ? 'Saving...' : 'Log Interaction + Note'}
+          {saving ? 'Saving...' : editingInteractionId != null ? 'Save Note Changes' : 'Log Interaction + Note'}
         </button>
       </form>
 
@@ -326,6 +382,11 @@ export default function InteractionHistoryPanel({
               <article key={`selected-${note.id}`}>
                 <span>{formatDateTime(note.date)}</span>
                 <strong>{note.text}</strong>
+                <div className="note-card-tags">
+                  <span className={`done-tag ${note.isDone ? 'done' : 'open'}`}>
+                    {note.isDone ? 'Done' : 'Not Done'}
+                  </span>
+                </div>
                 {note.interaction && (
                   <div className="interaction-summary-card">
                     <div className="interaction-summary-head">

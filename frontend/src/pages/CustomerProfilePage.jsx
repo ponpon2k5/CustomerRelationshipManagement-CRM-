@@ -112,11 +112,11 @@ export default function CustomerProfilePage({
               </label>
               {editErrors.contact && <span className="field-error">{editErrors.contact}</span>}
               <label>
-                Address
+                Address (Optional)
                 <input value={editForm.address} onChange={(event) => onUpdateForm('address', event.target.value)} />
               </label>
               <label>
-                Company name
+                Company name (Optional)
                 <input
                   value={editForm.companyName}
                   onChange={(event) => onUpdateForm('companyName', event.target.value)}
@@ -174,7 +174,7 @@ export default function CustomerProfilePage({
           <div className="history-panel-heading">
             <div>
               <h3>Notes</h3>
-              <p>Notes are saved after each interaction and sorted newest first.</p>
+              <p>Select a note to load it into Interaction History form for processing and done tracking.</p>
             </div>
           </div>
           <Timeline

@@ -2,7 +2,6 @@ package com.scrum.crm.controller;
 
 import com.scrum.crm.dto.auth.LoginRequest;
 import com.scrum.crm.dto.auth.LoginResponse;
-import com.scrum.crm.dto.auth.SocialLoginRequest;
 import com.scrum.crm.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,10 +20,5 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
-    }
-
-    @PostMapping("/social-login")
-    public LoginResponse socialLogin(@Valid @RequestBody SocialLoginRequest request) {
-        return authService.socialLogin(request);
     }
 }

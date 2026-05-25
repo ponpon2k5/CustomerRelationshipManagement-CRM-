@@ -50,7 +50,8 @@ public class InteractionNoteController {
 
     @GetMapping("/interactions/issues")
     public ResponseEntity<List<InteractionIssueResponse>> listIssues(
-            @RequestParam(defaultValue = "200") int limit) {
+            @RequestParam(defaultValue = "200") int limit) { // Nếu client không truyền query parameter đó lên URL,
+                                                             // Spring Boot sẽ tự dùng giá trị mặc định là "200".
         return ResponseEntity.ok(interactionNoteService.listIssues(limit));
     }
 

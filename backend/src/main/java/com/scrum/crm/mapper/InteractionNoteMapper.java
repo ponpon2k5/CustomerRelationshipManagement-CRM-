@@ -10,7 +10,7 @@ public final class InteractionNoteMapper {
     private InteractionNoteMapper() {
     }
 
-    public static InteractionNoteResponse toResponse(
+    public static InteractionNoteResponse toResponse( // một Mapper để đổi từ entity sang response DTOs
             InteractionNote note,
             AiSummaryStatus summaryStatus,
             InteractionSummaryResponse latestSummary) {
@@ -24,10 +24,10 @@ public final class InteractionNoteMapper {
                 note.getDescription(),
                 note.getPriority(),
                 note.getStatus(),
+                note.getIsDone(),
                 summaryStatus,
                 latestSummary,
                 note.getCreatedAt(),
-                note.getUpdatedAt()
-        );
+                note.getUpdatedAt());
     }
 }

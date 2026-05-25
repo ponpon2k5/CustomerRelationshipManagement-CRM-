@@ -38,6 +38,7 @@ export function toTimelineItem(interaction) {
     emotionLabel: STATUS_LABELS[status] || STATUS_LABELS.NEUTRAL,
     summaryStatus,
     latestSummary: interaction.latestSummary || null,
+    isDone: Boolean(interaction.isDone),
     date: interaction.interactionTime,
   }
 }
@@ -57,6 +58,7 @@ export function toNoteItem(interaction) {
     priorityLabel: PRIORITY_LABELS[priority] || PRIORITY_LABELS.MEDIUM,
     status,
     statusLabel: STATUS_LABELS[status] || STATUS_LABELS.NEUTRAL,
+    isDone: Boolean(interaction.isDone),
     text: interaction.title ? `${interaction.title}: ${interaction.description}` : interaction.description,
     date: interaction.interactionTime,
   }

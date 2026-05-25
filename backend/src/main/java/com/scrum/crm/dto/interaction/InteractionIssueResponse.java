@@ -13,6 +13,7 @@ public record InteractionIssueResponse(
         LocalDateTime interactionTime,
         InteractionPriority priority,
         InteractionStatus status,
+        Boolean isDone,
         Long customerId,
         String customerName,
         String customerEmail,
@@ -22,4 +23,3 @@ public record InteractionIssueResponse(
         String createdByName
 ) {
 }
-

@@ -32,4 +32,6 @@ public class InteractionNoteUpdateRequest {
 
     @NotNull
     private InteractionStatus status;
+
+    private Boolean isDone;
 }

@@ -56,7 +56,7 @@ public class CustomerController {
         return customerService.updateCustomer(id, request);
     }
 
-    @PatchMapping("/{id}/deactivate")
+    @PatchMapping("/{id}/deactivate") // cập nhật 1 phần dữ liệu
     public CustomerResponse deactivateCustomer(@PathVariable Long id) {
         return customerService.deactivateCustomer(id);
     }

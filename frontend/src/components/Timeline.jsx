@@ -41,6 +41,9 @@ export default function Timeline({
                   <span className={`emotion-tag emotion-${String(item.status || 'NEUTRAL').toLowerCase()}`}>
                     {item.statusLabel || item.status || 'Neutral'}
                   </span>
+                  <span className={`done-tag ${item.isDone ? 'done' : 'open'}`}>
+                    {item.isDone ? 'Done' : 'Not Done'}
+                  </span>
                 </div>
               </div>
             ) : (

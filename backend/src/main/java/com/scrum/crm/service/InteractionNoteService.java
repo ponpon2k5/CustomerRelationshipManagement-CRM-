@@ -51,6 +51,7 @@ public class InteractionNoteService {
         note.setDescription(request.getDescription().trim());
         note.setPriority(request.getPriority());
         note.setStatus(request.getStatus());
+        note.setIsDone(Boolean.TRUE.equals(request.getIsDone()));
 
         InteractionNote savedNote = interactionNoteRepository.save(note);
         aiSummaryService.createAndQueueSummary(savedNote.getId());
@@ -88,6 +89,7 @@ public class InteractionNoteService {
                         note.getInteractionTime(),
                         note.getPriority(),
                         note.getStatus(),
+                        note.getIsDone(),
                         note.getCustomer().getId(),
                         note.getCustomer().getFullName(),
                         note.getCustomer().getEmail(),
@@ -110,6 +112,9 @@ public class InteractionNoteService {
         note.setDescription(request.getDescription().trim());
         note.setPriority(request.getPriority());
         note.setStatus(request.getStatus());
+        if (request.getIsDone() != null) {
+            note.setIsDone(request.getIsDone());
+        }
         InteractionNote saved = interactionNoteRepository.save(note);
         return mapToResponse(saved);
     }

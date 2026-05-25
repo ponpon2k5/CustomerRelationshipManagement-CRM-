@@ -46,11 +46,11 @@ export default function CreateCustomerModal({
           </div>
           {errors.contact && <span className="field-error">{errors.contact}</span>}
           <label>
-            Address
+            Address (Optional)
             <input value={form.address} onChange={(event) => onUpdateForm('address', event.target.value)} />
           </label>
           <label>
-            Company name
+            Company name (Optional)
             <input value={form.companyName} onChange={(event) => onUpdateForm('companyName', event.target.value)} />
           </label>
 

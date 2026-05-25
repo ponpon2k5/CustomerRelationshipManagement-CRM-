@@ -8,6 +8,7 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [stageFilter, setStageFilter] = useState('ALL')
+  const [suggestionError, setSuggestionError] = useState('')
 
   const quickSearches = [
     ...customers.slice(0, 3).map((customer) => customer.name).filter(Boolean),
@@ -26,6 +27,7 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
     if (keyword.length < 2) {
       setSuggestions([])
       setShowSuggestions(false)
+      setSuggestionError('')
       return
     }
 
@@ -41,10 +43,11 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
 
       setSuggestions(nextSuggestions)
       setShowSuggestions(nextSuggestions.length > 0)
+      setSuggestionError('')
     } catch (error) {
-      console.error('Suggestion error:', error)
       setSuggestions([])
       setShowSuggestions(false)
+      setSuggestionError(error.message || 'Không thể tải gợi ý tìm kiếm.')
     }
   }
 
@@ -94,6 +97,7 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
             onSubmit={(event) => {
               event.preventDefault()
               setShowSuggestions(false)
+              setSuggestionError('')
               onSearch(searchInput)
             }}
           >
@@ -117,6 +121,7 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
                   setSearchInput('')
                   setSuggestions([])
                   setShowSuggestions(false)
+                  setSuggestionError('')
                   onSearch('')
                 }}
               >
@@ -126,6 +131,13 @@ export default function SearchPage({ customers, query, searchInput, setSearchInp
 
             <button className="hero-search-button" type="submit">Search</button>
           </form>
+
+          {suggestionError && (
+            <div className="api-banner inline-banner" role="alert">
+              <span>{suggestionError}</span>
+              <button type="button" onClick={() => setSuggestionError('')}>Dismiss</button>
+            </div>
+          )}
 
           {showSuggestions && suggestions.length > 0 && (
             <div className="suggestion-box">

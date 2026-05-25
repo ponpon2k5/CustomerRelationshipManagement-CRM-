@@ -32,6 +32,8 @@ public class InteractionNoteCreateRequest {
     @NotNull
     private InteractionStatus status;
 
+    private Boolean isDone;
+
     @NotNull
     private Long createdById;
 }
