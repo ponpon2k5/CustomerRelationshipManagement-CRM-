@@ -1,5 +1,28 @@
-import { useState } from 'react'
-import { login } from '../services/authApi'
+import { useEffect, useState } from 'react'
+import { login, socialLogin } from '../services/authApi'
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
+  || '171585218856-fitg5j87i13pocbqetiod5hbjt15nee4.apps.googleusercontent.com'
+const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID || '2455719344850331'
+
+function loadExternalScript(src, id) {
+  return new Promise((resolve, reject) => {
+    const existingScript = document.getElementById(id)
+    if (existingScript) {
+      resolve()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = id
+    script.src = src
+    script.async = true
+    script.defer = true
+    script.onload = resolve
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+}
 
 const IconMail = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -75,7 +98,13 @@ export default function LoginPage({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [socialLoading, setSocialLoading] = useState('')
   const [shake, setShake] = useState(false)
+
+  useEffect(() => {
+    loadExternalScript('https://accounts.google.com/gsi/client', 'google-identity-services').catch(() => {})
+    loadExternalScript('https://connect.facebook.net/en_US/sdk.js', 'facebook-jssdk').catch(() => {})
+  }, [])
 
   function validateLogin() {
     const nextErrors = {}
@@ -134,6 +163,77 @@ export default function LoginPage({ onLogin }) {
     }
   }
 
+  async function handleSocialLogin(provider, getCredential) {
+    setSocialLoading(provider)
+    setErrors({})
+
+    try {
+      const credential = await getCredential()
+      const user = await socialLogin({ provider, credential })
+      onLogin(user)
+    } catch (err) {
+      setErrors({ general: err.message || 'Không thể đăng nhập bằng tài khoản mạng xã hội.' })
+      triggerShake()
+    } finally {
+      setSocialLoading('')
+    }
+  }
+
+  function requestGoogleAccessToken() {
+    return new Promise((resolve, reject) => {
+      loadExternalScript('https://accounts.google.com/gsi/client', 'google-identity-services')
+        .then(() => {
+          if (!window.google?.accounts?.oauth2) {
+            reject(new Error('Không thể tải Google Login.'))
+            return
+          }
+
+          const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'openid email profile',
+            callback: (response) => {
+              if (response.error || !response.access_token) {
+                reject(new Error('Google login bị hủy hoặc không hợp lệ.'))
+                return
+              }
+              resolve(response.access_token)
+            },
+          })
+
+          tokenClient.requestAccessToken()
+        })
+        .catch(() => reject(new Error('Không thể tải Google Login.')))
+    })
+  }
+
+  function requestFacebookAccessToken() {
+    return new Promise((resolve, reject) => {
+      loadExternalScript('https://connect.facebook.net/en_US/sdk.js', 'facebook-jssdk')
+        .then(() => {
+          if (!window.FB) {
+            reject(new Error('Không thể tải Facebook Login.'))
+            return
+          }
+
+          window.FB.init({
+            appId: FACEBOOK_APP_ID,
+            cookie: true,
+            version: 'v20.0',
+          })
+
+          window.FB.login((response) => {
+            if (response.authResponse?.accessToken) {
+              resolve(response.authResponse.accessToken)
+              return
+            }
+
+            reject(new Error('Facebook login bị hủy hoặc không hợp lệ.'))
+          }, { scope: 'email,public_profile', return_scopes: true })
+        })
+        .catch(() => reject(new Error('Không thể tải Facebook Login.')))
+    })
+  }
+
   return (
     <main className="login-page">
       <div className="login-shape coral" />
@@ -164,8 +264,20 @@ export default function LoginPage({ onLogin }) {
           </div>
 
           <div className="social-row" aria-label="Social login options">
-            <button type="button"><IconFb />Facebook</button>
-            <button type="button"><IconGoogle />Google</button>
+            <button
+              disabled={Boolean(socialLoading)}
+              type="button"
+              onClick={() => handleSocialLogin('facebook', requestFacebookAccessToken)}
+            >
+              <IconFb />{socialLoading === 'facebook' ? 'Đang xử lý...' : 'Facebook'}
+            </button>
+            <button
+              disabled={Boolean(socialLoading)}
+              type="button"
+              onClick={() => handleSocialLogin('google', requestGoogleAccessToken)}
+            >
+              <IconGoogle />{socialLoading === 'google' ? 'Đang xử lý...' : 'Google'}
+            </button>
             <button type="button"><IconLinkedIn />LinkedIn</button>
           </div>
 
