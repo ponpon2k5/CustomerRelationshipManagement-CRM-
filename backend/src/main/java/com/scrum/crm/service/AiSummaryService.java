@@ -42,7 +42,9 @@ public class AiSummaryService {
             throw new ResourceNotFoundException("Interaction note not found with id: " + noteId);
         }
 
-        interactionSummaryCommandRepository.markNotePending(noteId);
+        interactionSummaryCommandRepository.markNotePending(noteId); // update trạng thái note sang PENDING cho AI
+                                                                     // summary.
+        // insert một record mới vào bảng summary với trạng thái pending cho noteId.
         Long summaryId = interactionSummaryCommandRepository.createPendingSummary(noteId, promptVersion, modelUsed);
         triggerAfterCommit(noteId, summaryId);
         return summaryId;
@@ -73,7 +75,8 @@ public class AiSummaryService {
             }
 
             InteractionSummaryResponse latest = findLatestSummaryOrNull(noteId);
-            if (latest != null && (latest.status() == AiSummaryStatus.PENDING || latest.status() == AiSummaryStatus.PROCESSING)) {
+            if (latest != null
+                    && (latest.status() == AiSummaryStatus.PENDING || latest.status() == AiSummaryStatus.PROCESSING)) {
                 results.add(new AiSummaryBatchItemResponse(noteId, "skipped", null, "summary_in_progress"));
                 continue;
             }
@@ -96,8 +99,7 @@ public class AiSummaryService {
                 uniqueNoteIds.size(),
                 accepted,
                 uniqueNoteIds.size() - accepted,
-                results
-        );
+                results);
     }
 
     @Transactional(readOnly = true)
@@ -134,8 +136,7 @@ public class AiSummaryService {
                 summary.getTokensUsed(),
                 summary.getErrorMessage(),
                 summary.getCreatedAt(),
-                summary.getCompletedAt()
-        );
+                summary.getCompletedAt());
     }
 
     private void triggerAfterCommit(Long noteId, Long summaryId) {

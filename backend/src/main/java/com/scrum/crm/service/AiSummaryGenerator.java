@@ -44,12 +44,11 @@ public class AiSummaryGenerator {
             "pain_points",
             "commitments",
             "next_steps",
-            "risk_flags"
-    );
+            "risk_flags");
 
     private final ObjectMapper objectMapper;
 
-    @Value("${crm.ai.gemini.api-key:}")
+    @Value("${crm.ai.gemini.api-key:}") // @Value("${key:default}")
     private String geminiApiKey;
 
     @Value("${crm.ai.gemini.base-url:https://generativelanguage.googleapis.com}")
@@ -90,37 +89,39 @@ public class AiSummaryGenerator {
 
             ObjectNode systemInstruction = objectMapper.createObjectNode();
             systemInstruction.set("parts", objectMapper.createArrayNode()
-                    .add(objectMapper.createObjectNode().put("text", SYSTEM_PROMPT)));
+                    .add(objectMapper.createObjectNode().put("text", SYSTEM_PROMPT))); // nhét system prompt
+
             request.set("systemInstruction", systemInstruction);
 
             request.set("contents", objectMapper.createArrayNode()
                     .add(objectMapper.createObjectNode()
                             .put("role", "user")
                             .set("parts", objectMapper.createArrayNode()
-                                    .add(objectMapper.createObjectNode().put("text", prompt)))));
+                                    .add(objectMapper.createObjectNode().put("text", prompt))))); // nhét user prompt
 
             ObjectNode generationConfig = objectMapper.createObjectNode();
             generationConfig.put("temperature", 0);
             generationConfig.put("maxOutputTokens", maxOutputTokens);
-            generationConfig.put("responseMimeType", "application/json");
+            generationConfig.put("responseMimeType", "application/json"); // muốn model trả về json
             request.set("generationConfig", generationConfig);
 
-            String requestBody = objectMapper.writeValueAsString(request);
+            String requestBody = objectMapper.writeValueAsString(request); // chuyển sang string
 
-            RestClient client = RestClient.builder()
+            RestClient client = RestClient.builder()// gọi Gemini API
                     .baseUrl(geminiBaseUrl)
                     .defaultHeader("x-goog-api-key", geminiApiKey)
                     .build();
 
-            String responseBody = client.post()
+            String responseBody = client.post()// gửi HTTP POST đến Gemini và lấy response dạng chuỗi.
                     .uri("/v1beta/models/{model}:generateContent", geminiModel)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody)
                     .retrieve()
                     .body(String.class);
 
-            JsonNode responseJson = objectMapper.readTree(responseBody);
-            int tokensUsed = readTokensUsed(responseJson);
+            JsonNode responseJson = objectMapper.readTree(responseBody); // Parse chuỗi JSON (responseBody) thành cây
+                                                                         // JSON để đọc field dễ hơn.
+            int tokensUsed = readTokensUsed(responseJson);// Lấy số token đã dùng từ response metadata.
             String text = extractTextFromGeminiResponse(responseJson);
             StructuredSummary parsed = parseSummaryWithFallback(note, text);
             return new GenerationResult(prompt, responseBody, parsed, tokensUsed, geminiModel);
@@ -169,6 +170,7 @@ public class AiSummaryGenerator {
         return text;
     }
 
+    // usageMetadata -> promptTokenCount +candidatesTokenCount +totalTokenCount
     private int readTokensUsed(JsonNode responseJson) {
         JsonNode usage = responseJson.path("usageMetadata");
         return usage.path("totalTokenCount").asInt(
@@ -176,7 +178,7 @@ public class AiSummaryGenerator {
     }
 
     private boolean isQuotaExceeded(RestClientResponseException ex) {
-        if (ex.getStatusCode().value() != 429) {
+        if (ex.getStatusCode().value() != 429) { // 429 Too Many Requests
             return false;
         }
         String body = ex.getResponseBodyAsString();
@@ -258,8 +260,7 @@ public class AiSummaryGenerator {
                     sanitize(node.path("pain_points").asText("unknown")),
                     sanitize(node.path("commitments").asText("unknown")),
                     sanitize(node.path("next_steps").asText("unknown")),
-                    sanitize(node.path("risk_flags").asText("none"))
-            );
+                    sanitize(node.path("risk_flags").asText("none")));
         } catch (Exception ex) {
             throw new IllegalStateException("Invalid AI JSON response: " + ex.getMessage(), ex);
         }
@@ -311,8 +312,7 @@ public class AiSummaryGenerator {
             String painPoints,
             String commitments,
             String nextSteps,
-            String riskFlags
-    ) {
+            String riskFlags) {
     }
 
     public record GenerationResult(
@@ -320,7 +320,6 @@ public class AiSummaryGenerator {
             String rawResponse,
             StructuredSummary summary,
             int tokensUsed,
-            String modelUsed
-    ) {
+            String modelUsed) {
     }
 }
