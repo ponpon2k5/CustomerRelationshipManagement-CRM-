@@ -177,10 +177,6 @@ export default function LoginPage({ onLogin }) {
             />
           </div>
 
-          <button className="forgot-link" type="button">
-            Forgot password?
-          </button>
-
           <button className="auth-submit" disabled={loading} type="submit">
             {loading && <span className="spinner" />}
             {loading ? 'Processing...' : 'Login'}
