@@ -160,7 +160,21 @@ export default function IssuesPage({ onOpenProfile }) {
             </thead>
             <tbody>
               {filteredIssues.map((issue) => (
-                <tr key={issue.id}>
+                <tr
+                  key={issue.id}
+                  className={issue.customerId ? 'clickable-row' : ''}
+                  tabIndex={issue.customerId ? 0 : undefined}
+                  onClick={() => {
+                    if (issue.customerId) onOpenProfile(issue.customerId)
+                  }}
+                  onKeyDown={(event) => {
+                    if (!issue.customerId) return
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onOpenProfile(issue.customerId)
+                    }
+                  }}
+                >
                   <td>
                     <strong>{issue.title || '-'}</strong>
                   </td>
@@ -170,15 +184,6 @@ export default function IssuesPage({ onOpenProfile }) {
                       <span>{issue.customerEmail || '-'}</span>
                       <span>{issue.customerPhone || '-'}</span>
                       <span>{issue.customerCompany || '-'}</span>
-                      {issue.customerId && (
-                        <button
-                          className="text-button"
-                          type="button"
-                          onClick={() => onOpenProfile(issue.customerId)}
-                        >
-                          Open profile
-                        </button>
-                      )}
                     </div>
                   </td>
                   <td>{issue.createdByName || `User #${issue.createdById}`}</td>

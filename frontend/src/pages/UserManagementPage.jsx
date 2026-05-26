@@ -4,6 +4,7 @@ import { createUser, getUsers, updateUserRoleStatus } from '../services/userApi'
 import { formatDate } from '../utils/customerUtils'
 
 const roles = ['STAFF', 'MANAGER', 'ADMIN']
+const roleFilterOptions = ['', ...roles]
 const statuses = ['ACTIVE', 'INACTIVE']
 
 function userStatus(user) {
@@ -141,9 +142,9 @@ export default function UserManagementPage({ currentUser }) {
                 setPage(0)
               }}
             >
-              {roles.map((role) => (
+              {roleFilterOptions.map((role) => (
                 <option key={role || 'all'} value={role}>
-                  {role || 'All roles'}
+                  {role || 'NONE'}
                 </option>
               ))}
             </select>
@@ -213,7 +214,7 @@ export default function UserManagementPage({ currentUser }) {
                         value={user.role}
                         onChange={(event) => updateUser(user.id, { role: event.target.value })}
                       >
-                        {roles.filter(Boolean).map((role) => (
+                        {roles.map((role) => (
                           <option key={role} value={role}>{role}</option>
                         ))}
                       </select>
