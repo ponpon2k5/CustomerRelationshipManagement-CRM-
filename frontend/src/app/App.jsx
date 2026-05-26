@@ -8,6 +8,7 @@ import IssuesPage from '../pages/IssuesPage'
 import LoginPage from '../pages/LoginPage'
 import SearchPage from '../pages/SearchPage'
 import UserManagementPage from '../pages/UserManagementPage'
+import AiChatbot from '../components/AiChatbot'
 import {
   createCustomer,
   deactivateCustomer as deactivateCustomerRequest,
@@ -548,6 +549,7 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+      <AiChatbot />
     </AppLayout>
   )
 }
