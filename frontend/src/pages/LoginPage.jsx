@@ -57,11 +57,11 @@ export default function LoginPage({ onLogin }) {
   function validateLogin() {
     const nextErrors = {}
 
-    if (!email.trim()) nextErrors.email = 'Email không được để trống.'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Email không đúng định dạng.'
+    if (!email.trim()) nextErrors.email = 'Email is required.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) nextErrors.email = 'Email format is invalid.'
 
-    if (!password) nextErrors.password = 'Mật khẩu không được để trống.'
-    else if (password.length < 6) nextErrors.password = 'Mật khẩu tối thiểu 6 ký tự.'
+    if (!password) nextErrors.password = 'Password is required.'
+    else if (password.length < 6) nextErrors.password = 'Password must be at least 6 characters.'
 
     return nextErrors
   }
@@ -104,7 +104,7 @@ export default function LoginPage({ onLogin }) {
       })
       onLogin(user)
     } catch (err) {
-      setErrors({ general: err.message || 'Email hoặc mật khẩu không chính xác. Vui lòng thử lại.' })
+      setErrors({ general: err.message || 'Email or password is incorrect. Please try again.' })
       triggerShake()
     } finally {
       setLoading(false)
@@ -130,14 +130,14 @@ export default function LoginPage({ onLogin }) {
 
           <div className="login-copy">
             <h1>Welcome Back!</h1>
-            <p>Đăng nhập để tiếp tục quản lý khách hàng và lịch sử tương tác.</p>
+            <p>Sign in to continue managing customers and interaction history.</p>
           </div>
         </aside>
 
         <form className="auth-form" onSubmit={handleAuthSubmit}>
           <div>
             <p className="eyebrow">Customer Relationship Management</p>
-            <h2>Đăng Nhập</h2>
+            <h2>Login</h2>
           </div>
 
           {errors.general && (
@@ -159,12 +159,12 @@ export default function LoginPage({ onLogin }) {
             <AuthField
               error={errors.password}
               icon={<IconLock />}
-              label="Mật khẩu"
+              label="Password"
               onChange={(value) => updateAuthField('password', value)}
-              placeholder="Mật khẩu"
+              placeholder="Password"
               rightControl={
                 <button
-                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                   className="password-toggle"
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
@@ -178,12 +178,12 @@ export default function LoginPage({ onLogin }) {
           </div>
 
           <button className="forgot-link" type="button">
-            Quên mật khẩu?
+            Forgot password?
           </button>
 
           <button className="auth-submit" disabled={loading} type="submit">
             {loading && <span className="spinner" />}
-            {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
+            {loading ? 'Processing...' : 'Login'}
           </button>
 
         </form>

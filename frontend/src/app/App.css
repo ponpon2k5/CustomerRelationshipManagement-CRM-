@@ -182,7 +182,7 @@
 }
 
 .auth-form h2 {
-  margin-top: 4px;
+  margin: 4px 0 20px;
   text-align: center;
   color: #1ba99f;
   font-size: 26px;
@@ -190,6 +190,7 @@
 }
 
 .auth-form > div:first-child .eyebrow {
+  margin-bottom: 10px;
   text-align: center;
 }
 

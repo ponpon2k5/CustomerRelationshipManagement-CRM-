@@ -82,7 +82,7 @@ export default function AppLayout({
           <div className="user-chip">
             {role && <span>{role}</span>}
             <strong>Welcome, {displayName}</strong>
-            <button type="button" onClick={onLogout}>Đăng xuất</button>
+            <button type="button" onClick={onLogout}>Logout</button>
           </div>
         </header>
 
