@@ -40,7 +40,7 @@ public class AiChatService {
                - id (bigint, PK)
                - full_name (varchar(100))
                - email (varchar(150), unique)
-               - role (varchar(20), enums: 'ADMIN', 'MANAGER')
+               - role (varchar(20), enums: 'ADMIN', 'MANAGER', 'STAFF')
                - is_active (boolean)
             
             2. public.customers:
