@@ -4,6 +4,7 @@ import com.scrum.crm.dto.user.UserCreateRequest;
 import com.scrum.crm.dto.user.UserPageResponse;
 import com.scrum.crm.dto.user.UserResponse;
 import com.scrum.crm.dto.user.UserRoleStatusUpdateRequest;
+import com.scrum.crm.dto.user.UserUpdateRequest;
 import com.scrum.crm.entity.User;
 import com.scrum.crm.entity.UserRole;
 import com.scrum.crm.exception.ConflictException;
@@ -81,6 +82,34 @@ public class UserManagementService {
 
         if (request.isActive() != null) {
             user.setIsActive(request.isActive());
+        }
+
+        return toResponse(userRepository.save(user));
+    }
+
+    @Transactional
+    public UserResponse updateUser(Long actorId, Long targetUserId, UserUpdateRequest request) {
+        adminAccessService.requireActiveAdmin(actorId);
+
+        User user = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + targetUserId));
+
+        String normalizedEmail = normalizeEmail(request.email());
+        if (userRepository.existsByEmailIgnoreCaseAndIdNot(normalizedEmail, targetUserId)) {
+            throw new ConflictException("Email already exists: " + normalizedEmail);
+        }
+
+        user.setFullName(request.fullName().trim());
+        user.setEmail(normalizedEmail);
+        user.setRole(request.role());
+        user.setIsActive(request.isActive());
+
+        String newPassword = request.password();
+        if (newPassword != null && !newPassword.isBlank()) {
+            if (newPassword.length() < 6 || newPassword.length() > 72) {
+                throw new IllegalArgumentException("Password must be between 6 and 72 characters.");
+            }
+            user.setPasswordHash(passwordEncoder.encode(newPassword));
         }
 
         return toResponse(userRepository.save(user));

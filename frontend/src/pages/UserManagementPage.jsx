@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import CreateUserModal from '../components/CreateUserModal'
-import { createUser, getUsers, updateUserRoleStatus } from '../services/userApi'
+import EditUserModal from '../components/EditUserModal'
+import { createUser, getUsers, updateUserAccount, updateUserRoleStatus } from '../services/userApi'
 import { formatDate } from '../utils/customerUtils'
 
 const roles = ['STAFF', 'MANAGER', 'ADMIN']
 const roleFilterOptions = ['', ...roles]
-const statuses = ['ACTIVE', 'INACTIVE']
+const statuses = ['', 'ACTIVE', 'INACTIVE']
 
 function userStatus(user) {
   return user.isActive ? 'ACTIVE' : 'INACTIVE'
@@ -23,8 +24,11 @@ export default function UserManagementPage({ currentUser }) {
   const [savingId, setSavingId] = useState(null)
   const [error, setError] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingUser, setEditingUser] = useState(null)
   const [createError, setCreateError] = useState('')
+  const [editError, setEditError] = useState('')
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   const isAdmin = String(currentUser?.role || '').toUpperCase() === 'ADMIN'
 
@@ -68,7 +72,7 @@ export default function UserManagementPage({ currentUser }) {
     loadUsers(0)
   }, [currentUser?.id, currentUser?.role, roleFilter, statusFilter])
 
-  async function updateUser(userId, payload) {
+  async function updateUserInline(userId, payload) {
     setSavingId(userId)
     setError('')
 
@@ -94,6 +98,23 @@ export default function UserManagementPage({ currentUser }) {
       setCreateError(err.message || 'Failed to create user.')
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function handleEditUser(payload) {
+    if (!editingUser) return
+
+    setEditing(true)
+    setEditError('')
+
+    try {
+      const updated = await updateUserAccount(currentUser.id, editingUser.id, payload)
+      setUsers((current) => current.map((user) => (user.id === updated.id ? updated : user)))
+      setEditingUser(null)
+    } catch (err) {
+      setEditError(err.message || 'Failed to update user.')
+    } finally {
+      setEditing(false)
     }
   }
 
@@ -158,7 +179,7 @@ export default function UserManagementPage({ currentUser }) {
             >
               {statuses.map((status) => (
                 <option key={status || 'all'} value={status}>
-                  {status || 'All statuses'}
+                  {status || 'NONE'}
                 </option>
               ))}
             </select>
@@ -186,16 +207,17 @@ export default function UserManagementPage({ currentUser }) {
                 <th>Status</th>
                 <th>Created</th>
                 <th>Updated</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6">Loading users...</td>
+                  <td colSpan="7">Loading users...</td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan="6">No users found.</td>
+                  <td colSpan="7">No users found.</td>
                 </tr>
               ) : (
                 users.map((user) => (
@@ -212,7 +234,7 @@ export default function UserManagementPage({ currentUser }) {
                         className="role-select"
                         disabled={savingId === user.id}
                         value={user.role}
-                        onChange={(event) => updateUser(user.id, { role: event.target.value })}
+                        onChange={(event) => updateUserInline(user.id, { role: event.target.value })}
                       >
                         {roles.map((role) => (
                           <option key={role} value={role}>{role}</option>
@@ -225,7 +247,7 @@ export default function UserManagementPage({ currentUser }) {
                           checked={user.isActive}
                           disabled={savingId === user.id}
                           type="checkbox"
-                          onChange={(event) => updateUser(user.id, { isActive: event.target.checked })}
+                          onChange={(event) => updateUserInline(user.id, { isActive: event.target.checked })}
                         />
                         <span aria-hidden="true" />
                         <strong className={`status-pill ${user.isActive ? '' : 'inactive'}`}>
@@ -235,6 +257,19 @@ export default function UserManagementPage({ currentUser }) {
                     </td>
                     <td>{formatDate(user.createdAt)}</td>
                     <td>{formatDate(user.updatedAt)}</td>
+                    <td>
+                      <button
+                        className="table-action"
+                        disabled={savingId === user.id}
+                        type="button"
+                        onClick={() => {
+                          setEditingUser(user)
+                          setEditError('')
+                        }}
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))
               )}
@@ -270,6 +305,19 @@ export default function UserManagementPage({ currentUser }) {
             setCreateError('')
           }}
           onCreate={handleCreateUser}
+        />
+      )}
+
+      {editingUser && (
+        <EditUserModal
+          error={editError}
+          loading={editing}
+          user={editingUser}
+          onClose={() => {
+            setEditingUser(null)
+            setEditError('')
+          }}
+          onSave={handleEditUser}
         />
       )}
     </section>
