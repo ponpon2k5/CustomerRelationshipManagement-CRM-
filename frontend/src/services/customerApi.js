@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+﻿const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim()
 
 function buildUrl(path) {
   return `${API_BASE_URL}${path}`
@@ -71,3 +71,4 @@ export function activateCustomer(customerId) {
 export function searchCustomers(keyword) {
   return request(`/api/customers/search?keyword=${encodeURIComponent(keyword)}`)
 }
+

@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+﻿const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').trim()
 const CACHE_TTL_MS = 30_000
 
 let cachedStats = null
@@ -33,3 +33,4 @@ export async function getDashboardStats({ force = false } = {}) {
   cachedAt = Date.now()
   return cachedStats
 }
+
