@@ -60,3 +60,10 @@ export function updateUserRoleStatus(actorId, userId, payload) {
     body: JSON.stringify(payload),
   })
 }
+
+export function updateUserAccount(actorId, userId, payload) {
+  return request(`/api/users/${userId}`, actorId, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+}

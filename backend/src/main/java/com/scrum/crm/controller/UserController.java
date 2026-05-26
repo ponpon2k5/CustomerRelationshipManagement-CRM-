@@ -4,6 +4,7 @@ import com.scrum.crm.dto.user.UserCreateRequest;
 import com.scrum.crm.dto.user.UserPageResponse;
 import com.scrum.crm.dto.user.UserResponse;
 import com.scrum.crm.dto.user.UserRoleStatusUpdateRequest;
+import com.scrum.crm.dto.user.UserUpdateRequest;
 import com.scrum.crm.entity.UserRole;
 import com.scrum.crm.service.UserManagementService;
 import jakarta.validation.Valid;
@@ -56,6 +57,15 @@ public class UserController {
             @RequestBody UserRoleStatusUpdateRequest request
     ) {
         return userManagementService.updateRoleStatus(actorId, id, request);
+    }
+
+    @PutMapping("/{id}")
+    public UserResponse updateUser(
+            @RequestHeader("X-User-Id") Long actorId,
+            @PathVariable Long id,
+            @Valid @RequestBody UserUpdateRequest request
+    ) {
+        return userManagementService.updateUser(actorId, id, request);
     }
 
     private Boolean parseStatus(String status) {
